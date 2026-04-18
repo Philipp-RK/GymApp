@@ -442,7 +442,7 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .msg.ai .bubble{background:var(--s2);border:1px solid var(--border);border-bottom-left-radius:4px;}
 .msg-time{font-size:10px;color:var(--muted);margin-top:2px;padding:0 3px;}
 .chat-bar{flex-shrink:0;display:flex;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));position:sticky;bottom:0;z-index:10;}
-.chat-in{flex:1;background:var(--s2);border:1px solid var(--border2);border-radius:22px;color:var(--text);font-family:var(--db);font-size:14px;padding:9px 15px;outline:none;min-width:0;}
+.chat-in-webkit-appearance:none;appearance:none;{flex:1;background:var(--s2);border:1px solid var(--border2);border-radius:22px;color:var(--text);font-family:var(--db);font-size:14px;padding:9px 15px;outline:none;min-width:0;}
 .chat-in:focus{border-color:var(--accent);}
 .send-btn{width:42px;height:42px;min-width:42px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s;}
 .send-btn:active{opacity:.8;}
