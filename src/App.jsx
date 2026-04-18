@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// ─── SET TYPE HELPERS ────────────────────────────────────────
+// âââ SET TYPE HELPERS ââââââââââââââââââââââââââââââââââââââââ
 // Warm-up = "W", Drop = "D", Normal = counted number (1, 2, 3...)
 // Warm-up and drop sets don't count toward the normal set counter
 function getSetLabel(sets, si) {
@@ -149,7 +149,7 @@ function useDragList(items, setItems) {
   return { onDragStart, onDragEnter, onDragOver, onDrop, onDragEnd };
 }
 
-// ─── SHARED SET ROW COMPONENT ────────────────────────────────
+// âââ SHARED SET ROW COMPONENT ââââââââââââââââââââââââââââââââ
 // Used in both WorkoutSession and HistoryDetail
 function MiniCalendar({program, history, todayIdx, startDate}) {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -303,7 +303,7 @@ function SetTypePicker({sets, si, onSelect}) {
               onPointerDown={e=>{e.stopPropagation(); onSelect(o.type); setPos(null);}}>
               <div className="type-picker-badge" style={{background:o.bg,color:o.color}}>{o.badge}</div>
               <span style={{color:o.color}}>{o.label}</span>
-              {(s.setType??"normal") === o.type && <span style={{marginLeft:"auto",color:o.color}}>✓</span>}
+              {(s.setType??"normal") === o.type && <span style={{marginLeft:"auto",color:o.color}}>â</span>}
             </div>
           ))}
         </div>
@@ -387,7 +387,7 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .ai-banner{margin:0 14px 10px;padding:10px 13px;border-radius:10px;font-size:13px;line-height:1.5;border-left:2.5px solid var(--accent);background:#1a1008;color:#ffcc88;}
 .ai-banner.good{border-color:var(--green);background:var(--gbg);color:#88cc88;}
 
-/* ── UNIFIED SET TABLE ── */
+/* ââ UNIFIED SET TABLE ââ */
 .set-table{width:100%;border-collapse:collapse;}
 .set-table-head th{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.5px;text-transform:uppercase;padding:7px 6px;text-align:center;border-bottom:1px solid var(--border);}
 .set-table-head th:first-child{text-align:left;padding-left:14px;}
@@ -598,13 +598,13 @@ export default function App() {
 
   if(histDetail) return(<><style>{CSS}</style><div className="app">
     <HistoryDetail session={histDetail} program={program} onBack={()=>setHistDetail(null)} onDelete={()=>{setHistory(h=>h.filter(s=>!(s.date===histDetail.date&&s.dayKey===histDetail.dayKey)));setHistDetail(null);}}/>
-  </div></>,);
+  </div></>);
 
   return(<><style>{CSS}</style><div className="app">
 
     {/* HOME */}
     {tab==="home"&&<>
-      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>Hey {user.name?.split(" ")[0]} 👋</p></div><div className="streak-chip">🔥 {streak}</div></div></div>
+      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>Hey {user.name?.split(" ")[0]} ð</p></div><div className="streak-chip">ð¥ {streak}</div></div></div>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>
@@ -629,14 +629,14 @@ export default function App() {
     <div key={ex.id} className="ex-row" style={{alignItems:"center"}}>
       <div style={{fontWeight:500,flex:1}}>{ex.name}</div>
       <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-        {pg?.type==="increase"&&<span className="prog-pill">↑ +{pg.amount}kg</span>}
-        <span style={{fontSize:12,color:"var(--muted2)",whiteSpace:"nowrap"}}>{displayWeight}kg · {displayReps} reps</span>
+        {pg?.type==="increase"&&<span className="prog-pill">â +{pg.amount}kg</span>}
+        <span style={{fontSize:12,color:"var(--muted2)",whiteSpace:"nowrap"}}>{displayWeight}kg Â· {displayReps} reps</span>
       </div>
     </div>
   );
 })}</div>
             <button className="btn-accent" onClick={()=>setActiveWorkout(todayDay)}>START WORKOUT</button>
-          </>:<p style={{color:"var(--muted2)",marginTop:8,fontSize:14}}>Recovery is part of the process. Rest up 🛌</p>}
+          </>:<p style={{color:"var(--muted2)",marginTop:8,fontSize:14}}>Recovery is part of the process. Rest up ð</p>}
         </div>
         <MiniCalendar program={program} history={history} todayIdx={todayIdx} startDate={ls.get("gr_start",null)}/>
       </div>
@@ -657,9 +657,9 @@ export default function App() {
               <div className="prog-day-name">{day.label}{isT&&<span style={{fontSize:10,color:day.color,marginLeft:8,background:day.color+"22",padding:"2px 7px",borderRadius:20}}>TODAY</span>}</div>
               <button className="btn-icon" onClick={()=>setEditingDay({...day,exercises:day.exercises.map(ex=>({...ex,setTypePerSet:ex.setTypePerSet||Array(ex.sets).fill("normal"),repsPerSet:ex.repsPerSet||Array(ex.sets).fill(ex.reps),weightPerSet:ex.weightPerSet||Array(ex.sets).fill(ex.weight),restPerSet:ex.restPerSet||Array(ex.sets).fill(ex.rest??120)}))})}><Ic.Edit/></button>
             </div>
-            {day.exercises.map(ex=>(<div key={ex.id} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 14px",borderBottom:"1px solid var(--border)"}}><span>{ex.name}</span><span style={{color:"var(--muted)"}}>{ex.sets}×{ex.reps} · {ex.weight}kg</span></div>))}
+            {day.exercises.map(ex=>(<div key={ex.id} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 14px",borderBottom:"1px solid var(--border)"}}><span>{ex.name}</span><span style={{color:"var(--muted)"}}>{ex.sets}Ã{ex.reps} Â· {ex.weight}kg</span></div>))}
             {isActive&&<button className="btn-accent" style={{margin:10,width:"calc(100% - 20px)",fontSize:15,padding:10}} onClick={()=>setActiveWorkout(day)}>START</button>}
-            {day.isRest&&<div style={{padding:"8px 14px 10px",fontSize:13,color:"var(--muted)"}}>Rest day · Edit to add exercises.</div>}
+            {day.isRest&&<div style={{padding:"8px 14px 10px",fontSize:13,color:"var(--muted)"}}>Rest day Â· Edit to add exercises.</div>}
           </div>);
         })}
         <button className="btn-accent" style={{background:"var(--s2)",color:"var(--muted2)",border:"1px solid var(--border)"}} onClick={addDay}>+ ADD DAY</button>
@@ -673,12 +673,12 @@ export default function App() {
         {history.length===0&&<p style={{textAlign:"center",color:"var(--muted)",marginTop:40}}>No sessions yet</p>}
         {[...history].reverse().map((s,i)=>{ const day=program.find(d=>d.id===s.dayKey); return(<div key={i} className="hist-card" onClick={()=>setHistDetail(s)}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-            <div><div style={{fontWeight:600,color:day?.color}}>{day?.label??s.dayKey}</div><div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>{new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} · {s.duration}min</div></div>
-            <div style={{fontSize:11,color:"var(--muted)",alignSelf:"center"}}>View →</div>
+            <div><div style={{fontWeight:600,color:day?.color}}>{day?.label??s.dayKey}</div><div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>{new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} Â· {s.duration}min</div></div>
+            <div style={{fontSize:11,color:"var(--muted)",alignSelf:"center"}}>View â</div>
           </div>
-          {s.exercises?.filter(e=>!e.skipped).slice(0,3).map((ex,j)=>(<div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--muted2)",padding:"2px 0"}}><span>{ex.name}</span><span>{ex.weight}kg · {ex.sets?.filter(st=>!st.skipped&&st.reps).map(st=>st.reps).join("/")}</span></div>))}
+          {s.exercises?.filter(e=>!e.skipped).slice(0,3).map((ex,j)=>(<div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--muted2)",padding:"2px 0"}}><span>{ex.name}</span><span>{ex.weight}kg Â· {ex.sets?.filter(st=>!st.skipped&&st.reps).map(st=>st.reps).join("/")}</span></div>))}
           {s.exercises?.filter(e=>!e.skipped).length>3&&<div style={{fontSize:11,color:"var(--muted)",marginTop:3}}>+{s.exercises.filter(e=>!e.skipped).length-3} more</div>}
-          {s.note&&<div style={{marginTop:6,fontSize:12,color:"var(--muted2)",fontStyle:"italic"}}>📝 {s.note}</div>}
+          {s.note&&<div style={{marginTop:6,fontSize:12,color:"var(--muted2)",fontStyle:"italic"}}>ð {s.note}</div>}
         </div>); })}
       </div>
     </>}
@@ -689,7 +689,7 @@ export default function App() {
       <div className="phdr"><h1>SETTINGS</h1><p>{user.email}</p></div>
       <div className="scroll">
         <div className="card"><div className="ctitle" style={{fontSize:14}}>ACCOUNT</div><div className="srow"><div><div className="slbl">{user.name}</div><div className="ssub">{user.email}</div></div><button className="btn-ghost" onClick={()=>{setUser(null);ls.set("gr_user",null);}}>Sign out</button></div></div>
-        <div className="card"><div className="ctitle" style={{fontSize:14}}>GOOGLE INTEGRATION</div><p style={{fontSize:13,color:"var(--muted2)",marginBottom:12,lineHeight:1.6}}>Sync workouts to Google Sheets and add calendar reminders.</p><button className="btn-accent" style={{fontSize:15,padding:12,marginBottom:8}} onClick={handleConnectSheets}>{sheetId?"✓ SHEETS CONNECTED":"CONNECT GOOGLE SHEETS"}</button><button className="btn-accent" style={{fontSize:15,padding:12,background:"#1a2a3a",color:"#88aacc"}} onClick={handleCalendar}>SET UP CALENDAR REMINDERS</button></div>
+        <div className="card"><div className="ctitle" style={{fontSize:14}}>GOOGLE INTEGRATION</div><p style={{fontSize:13,color:"var(--muted2)",marginBottom:12,lineHeight:1.6}}>Sync workouts to Google Sheets and add calendar reminders.</p><button className="btn-accent" style={{fontSize:15,padding:12,marginBottom:8}} onClick={handleConnectSheets}>{sheetId?"â SHEETS CONNECTED":"CONNECT GOOGLE SHEETS"}</button><button className="btn-accent" style={{fontSize:15,padding:12,background:"#1a2a3a",color:"#88aacc"}} onClick={handleCalendar}>SET UP CALENDAR REMINDERS</button></div>
         <div className="card"><div className="ctitle" style={{fontSize:14}}>WORKOUT</div>
           <div className="srow"><div><div className="slbl">Rest timer between sets</div><div className="ssub">Countdown after each set</div></div><button className={`tog ${restEnabled?"on":""}`} onClick={()=>setRestEnabled(v=>!v)}/></div>
           <div className="srow"><div><div className="slbl">Schedule start date</div><div className="ssub">First day of your program cycle</div></div><input type="date" defaultValue={ls.get("gr_start","")?.slice(0,10)} onChange={e=>ls.set("gr_start",new Date(e.target.value).toISOString())} style={{background:"var(--s2)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"6px 8px",fontSize:13}}/></div>
@@ -710,7 +710,7 @@ export default function App() {
   </div></>);
 }
 
-// ── SHARED EXERCISE TABLE (editor + session + history) ────────
+// ââ SHARED EXERCISE TABLE (editor + session + history) ââââââââ
 function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChange, onRepsChange, onRestChange, onFieldBlur, onSkip, onRemoveSet, onCheck, onAddSet }) {
   const thead = (
     <thead className="set-table-head">
@@ -752,7 +752,7 @@ function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChan
                 }
               </td>
               {/* Previous */}
-              <td><span className="set-prev">{s.prevLabel ?? `${s.targetWeight??ex?.weight??0}kg×${s.targetReps??ex?.reps??0}`}</span></td>
+              <td><span className="set-prev">{s.prevLabel ?? `${s.targetWeight??ex?.weight??0}kgÃ${s.targetReps??ex?.reps??0}`}</span></td>
               {/* KG */}
               <td>
                 {editable ? (
@@ -773,7 +773,7 @@ function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChan
                     onBlur={()=>onFieldBlur&&onFieldBlur(si)}
                     disabled={s.skipped} style={{width:58}}/>
                 ) : (
-                  <span style={{fontWeight:600,fontSize:15,color:s.done?"#88cc88":"var(--text)"}}>{s.reps||"—"}</span>
+                  <span style={{fontWeight:600,fontSize:15,color:s.done?"#88cc88":"var(--text)"}}>{s.reps||"â"}</span>
                 )}
               </td>
               {/* Check / skip or Rest input */}
@@ -787,7 +787,7 @@ function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChan
                         style={{width:52,fontSize:13}}
                         title="Rest (s)"
                       />
-                      <div className="set-skip-x" onClick={()=>onRemoveSet(si)} title="Remove set">✕</div>
+                      <div className="set-skip-x" onClick={()=>onRemoveSet(si)} title="Remove set">â</div>
                     </div>
                   ) : (
                     <div style={{display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end"}}>
@@ -795,7 +795,7 @@ function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChan
                         {s.done&&<Ic.Check/>}
                       </div>
                       <div className="set-skip-x" onClick={()=>onSkip&&onSkip(si)} title={s.skipped?"Restore":"Skip"}>
-                        {s.skipped?"↩":"✕"}
+                        {s.skipped?"â©":"â"}
                       </div>
                     </div>
                   )}
@@ -818,7 +818,7 @@ function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChan
   );
 }
 
-// ── DAY EDITOR ───────────────────────────────────────────────
+// ââ DAY EDITOR âââââââââââââââââââââââââââââââââââââââââââââââ
 function SessionView({session,program,onClose}){
   const day=program.find(d=>d.id===session.dayKey);
   return(<div className="modal-overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}>
@@ -826,12 +826,12 @@ function SessionView({session,program,onClose}){
       <div>
         <div className="modal-title" style={{color:day?.color}}>{day?.label??session.dayKey}</div>
         <div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>
-          {new Date(session.date).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} · {session.duration}min
+          {new Date(session.date).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} Â· {session.duration}min
         </div>
       </div>
       <button className="btn-ghost" onClick={onClose}>Close</button>
     </div>
-    {session.note&&<div style={{background:"var(--s2)",borderRadius:10,padding:"10px 12px",marginBottom:12,fontSize:13,color:"var(--muted2)",fontStyle:"italic"}}>📝 {session.note}</div>}
+    {session.note&&<div style={{background:"var(--s2)",borderRadius:10,padding:"10px 12px",marginBottom:12,fontSize:13,color:"var(--muted2)",fontStyle:"italic"}}>ð {session.note}</div>}
     {session.exercises?.filter(e=>!e.skipped).map((ex,ei)=>{
       const types=ex.sets?.map(s=>s.setType??"normal")||[];
       return(<div key={ei} style={{background:"var(--s2)",borderRadius:12,marginBottom:10,overflow:"hidden"}}>
@@ -880,7 +880,7 @@ function DayEditor({day,onClose,onSave,onAddEx,onRemoveEx,onUpdateEx,onDelete}){
       <div className="modal-title">EDIT PROGRAM</div>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
       <input type="color" value={color} onChange={e=>setColor(e.target.value)} style={{width:40,height:32,border:"none",borderRadius:8,cursor:"pointer",background:"none",padding:0}}/>
-      <button onClick={onClose} style={{background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,width:32,height:32,cursor:"pointer",color:"var(--text)",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+      <button onClick={onClose} style={{background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,width:32,height:32,cursor:"pointer",color:"var(--text)",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>â</button>
       </div>
     </div>
     <div style={{marginBottom:14}}>
@@ -939,7 +939,7 @@ function DayEditor({day,onClose,onSave,onAddEx,onRemoveEx,onUpdateEx,onDelete}){
   </div></div>);
 }
 
-// ── WORKOUT SESSION ──────────────────────────────────────────
+// ââ WORKOUT SESSION ââââââââââââââââââââââââââââââââââââââââââ
 function WorkoutStats({exStates, elapsed, fmtTime}) {
   const totalVol = exStates.reduce((total, ex) => {
     if (ex.skipped) return total;
@@ -959,7 +959,7 @@ function WorkoutStats({exStates, elapsed, fmtTime}) {
       </div>
       <div style={{flex:1,padding:"10px 16px"}}>
         <div style={{fontSize:10,color:"var(--muted)",letterSpacing:.4,textTransform:"uppercase",marginBottom:2}}>Volume</div>
-        <div style={{fontFamily:"var(--df)",fontSize:20,letterSpacing:1,color:"var(--text)"}}>{totalVol > 0 ? `${totalVol.toLocaleString()}kg` : "—"}</div>
+        <div style={{fontFamily:"var(--df)",fontSize:20,letterSpacing:1,color:"var(--text)"}}>{totalVol > 0 ? `${totalVol.toLocaleString()}kg` : "â"}</div>
       </div>
     </div>
   );
@@ -973,7 +973,7 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
     const prevSessions=history.filter(h=>h.exercises?.some(e=>e.id===ex.id));
     const lastEx=prevSessions.length?prevSessions[prevSessions.length-1].exercises?.find(e=>e.id===ex.id):null;
     const lastSet=lastEx?.sets?.[si];
-    const prevLabel=lastSet&&!lastSet.skipped&&lastSet.reps?`${lastSet.weight??lastEx.weight}kg×${lastSet.reps}`:null;
+    const prevLabel=lastSet&&!lastSet.skipped&&lastSet.reps?`${lastSet.weight??lastEx.weight}kgÃ${lastSet.reps}`:null;
     return {
       setType:(ex.setTypePerSet||[])[si]??"normal",
       targetReps:(ex.repsPerSet||[])[si]??ex.reps,
@@ -1043,7 +1043,7 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
     <div className="w-header">
       <button className="back-btn" onClick={onBack}><Ic.Back/></button>
       <div style={{flex:1}}><div style={{fontFamily:"var(--df)",fontSize:21,letterSpacing:1.5}}>{workout.label}</div><div style={{fontSize:12,color:"var(--muted)"}}>{exStates.filter(e=>!e.skipped).length} exercises</div></div>
-      <button className="finish-btn" style={{width:"auto",margin:0,padding:"8px 18px",fontSize:15,letterSpacing:1}} onClick={handleFinish}>{allDone?"✓ DONE":"FINISH"}</button>
+      <button className="finish-btn" style={{width:"auto",margin:0,padding:"8px 18px",fontSize:15,letterSpacing:1}} onClick={handleFinish}>{allDone?"â DONE":"FINISH"}</button>
     </div>
     <WorkoutStats exStates={exStates} elapsed={elapsed} fmtTime={fmtTime}/>
     <div style={{flex:1,overflowY:"auto",paddingBottom:80}}>
@@ -1053,7 +1053,7 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
         const pg=getProgression(eh,ex.reps,exState.weight);
         const allSD=exState.sets.every(st=>st.skipped||st.done);
         return(<div key={ex.id}>
-          {pg&&!exState.skipped&&<div className={`ai-banner ${pg.type==="increase"?"good":""}`}>{pg.type==="increase"?`🔥 Hit all reps 2 sessions in a row! Try ${(exState.weight+pg.amount).toFixed(2)}kg (+${pg.amount}kg)`:`💡 You struggled last session — stay at ${exState.weight}kg`}</div>}
+          {pg&&!exState.skipped&&<div className={`ai-banner ${pg.type==="increase"?"good":""}`}>{pg.type==="increase"?`ð¥ Hit all reps 2 sessions in a row! Try ${(exState.weight+pg.amount).toFixed(2)}kg (+${pg.amount}kg)`:`ð¡ You struggled last session â stay at ${exState.weight}kg`}</div>}
           <div className={`ex-card ${exState.skipped?"ex-skip":allSD?"ex-done":""}`}>
             <div className="ex-chead">
               <div><div className="ex-cname">{ex.name}</div><div className="ex-cmeta">{exState.sets.filter(s=>!s.skipped&&(s.setType==="normal"||s.setType==="drop")).length} working sets</div></div>
@@ -1085,14 +1085,14 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
       })}
       <div className="note-wrap" style={{marginTop:8}}>
         <div className="note-lbl">Session note (optional)</div>
-        <textarea className="note-ta" placeholder="Feeling a bit tired today…" value={note} onChange={e=>setNote(e.target.value)}/>
+        <textarea className="note-ta" placeholder="Feeling a bit tired todayâ¦" value={note} onChange={e=>setNote(e.target.value)}/>
       </div>
-      <button className="finish-btn" onClick={handleFinish}>{allDone?"✓ FINISH WORKOUT":"FINISH WORKOUT (EARLY)"}</button>
+      <button className="finish-btn" onClick={handleFinish}>{allDone?"â FINISH WORKOUT":"FINISH WORKOUT (EARLY)"}</button>
     </div>
   </div>);
 }
 
-// ── HISTORY DETAIL ───────────────────────────────────────────
+// ââ HISTORY DETAIL âââââââââââââââââââââââââââââââââââââââââââ
 function HistoryDetail({session,program,onBack,onDelete}){
   const day=program.find(d=>d.id===session.dayKey);
   return(<div style={{display:"flex",flexDirection:"column",minHeight:"100svh"}}>
@@ -1100,7 +1100,7 @@ function HistoryDetail({session,program,onBack,onDelete}){
       <button className="back-btn" onClick={onBack}><Ic.Back/></button>
       <div style={{flex:1}}>
         <div style={{fontFamily:"var(--df)",fontSize:21,letterSpacing:1.5,color:day?.color??undefined}}>{day?.label??session.dayKey}</div>
-        <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(session.date).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} · {session.duration}min</div>
+        <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(session.date).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} Â· {session.duration}min</div>
       </div>
       {onDelete&&<button className="btn-danger" style={{fontSize:12,padding:"6px 12px"}} onClick={()=>{if(window.confirm("Delete this session?"))onDelete();}}>Delete</button>}
     </div>
@@ -1113,14 +1113,14 @@ function HistoryDetail({session,program,onBack,onDelete}){
           <ExerciseSetTable ex={exState} sets={(exState.sets??[]).map(s=>({...s,weight:s.weight??exState.weight,prevLabel:null,done:true}))} editable={false}/>
         </div>
       ))}
-      {session.note&&<div style={{margin:"0 14px 14px",padding:"10px 13px",background:"var(--s2)",borderRadius:10,fontSize:13,color:"var(--muted2)",fontStyle:"italic"}}>📝 {session.note}</div>}
+      {session.note&&<div style={{margin:"0 14px 14px",padding:"10px 13px",background:"var(--s2)",borderRadius:10,fontSize:13,color:"var(--muted2)",fontStyle:"italic"}}>ð {session.note}</div>}
     </div>
   </div>);
 }
 
-// ── TRAINER CHAT ─────────────────────────────────────────────
+// ââ TRAINER CHAT âââââââââââââââââââââââââââââââââââââââââââââ
 function TrainerChat({history,program,user}){
-  const [msgs,setMsgs]=useState([{role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything 💪`,time:nowT()}]);
+  const [msgs,setMsgs]=useState([{role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything ðª`,time:nowT()}]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const bottomRef=useRef(null);
@@ -1148,7 +1148,7 @@ function TrainerChat({history,program,user}){
       <div ref={bottomRef}/>
     </div>
     <div className="chat-bar">
-      <input className="chat-in" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask your trainer…"/>
+      <input className="chat-in" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask your trainerâ¦"/>
       <button className="send-btn" onClick={send}><Ic.Send/></button>
     </div>
   </div>);
