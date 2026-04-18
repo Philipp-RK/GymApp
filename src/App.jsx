@@ -573,7 +573,7 @@ export default function App() {
   const handleLogin=()=>{
     if(window.location.protocol==="capacitor:"||window.location.protocol==="file:"){alert("Google Login is only available in the web version. Please open gym-app-tau-vert.vercel.app in your browser.");return;}
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    const redirect = window.location.origin;
+    const redirect = "https://gym-app-tau-vert.vercel.app"
     const scope = encodeURIComponent('openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar');
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&prompt=select_account`;
     window.open(url, '_blank');
