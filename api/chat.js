@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,14 +35,18 @@ export default async function handler(req, res) {
     );
 
     if (!response.ok) {
-      const err = await response.text();
-      return res.status(500).json({ error: "Gemini error", detail: err });
+      const errText = await response.text();
+      console.error(`Gemini API error ${response.status}:`, errText);
+      let errDetail;
+      try { errDetail = JSON.parse(errText); } catch { errDetail = errText; }
+      return res.status(500).json({ error: "Gemini error", status: response.status, detail: errDetail });
     }
 
     const data = await response.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "Sorry, I couldn't respond right now.";
     return res.status(200).json({ reply });
   } catch (err) {
+    console.error("Gemini fetch error:", err);
     return res.status(500).json({ error: err.message });
   }
 }
