@@ -689,10 +689,11 @@ function TrainerChat({history,program,user}){
     const hist=history.slice(-15).map(s=>({date:s.date?.slice(0,10),day:s.dayKey,duration:s.duration,note:s.note,exercises:s.exercises?.map(e=>({name:e.name,weight:e.weight,sets:e.sets?.map(st=>st.skipped?"skip":(st.reps||"?"))}))}));
     const sys=`You are a personal gym trainer AI. Be direct, motivating, and practical. Always respond in English unless the user writes in another language.\nProgram: ${JSON.stringify(progSum)}\nLast 15 sessions: ${JSON.stringify(hist)}\nRules: concise (3-5 sentences), no filler, specific recommendations, humor if legs are skipped.`;
     try{
-      const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemPrompt:sys,messages:[...msgs.slice(1),{role:"user",text}]})});
+      const apiBase=import.meta.env.VITE_API_URL??"";
+      const r=await fetch(`${apiBase}/api/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemPrompt:sys,messages:[...msgs.slice(1),{role:"user",text}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:"ai",text:d.reply??"Connection error.",time:nowT()}]);
-    }catch{ setMsgs(m=>[...m,{role:"ai",text:"Connection error!",time:nowT()}]); }
+    }catch(e){ console.error("[chat] fetch error:",e); setMsgs(m=>[...m,{role:"ai",text:"Connection error!",time:nowT()}]); }
     setLoading(false);
   };
   return(
