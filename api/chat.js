@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: groqMessages,
-        max_tokens: 800,
+        max_tokens: 4000,
         temperature: 0.7,
       }),
     });

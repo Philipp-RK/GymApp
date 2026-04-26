@@ -763,8 +763,8 @@ ${JSON.stringify(progJson)}
 Last 15 sessions: ${JSON.stringify(hist)}
 
 IMPORTANT: If the user asks you to change, update, or modify their workout program:
-1. Briefly explain the changes (2-3 sentences)
-2. End your response with this exact block:
+1. Write 1-2 SHORT sentences summarizing what you changed. Do NOT list exercises in text.
+2. Immediately follow with this exact block (no extra text after it):
 <PROGRAM_UPDATE>
 [complete updated program JSON array, ALL days, same structure as above]
 </PROGRAM_UPDATE>
