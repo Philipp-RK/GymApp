@@ -674,13 +674,32 @@ function HistoryDetail({session,program,onBack,onDelete}){
 }
 
 function TrainerChat({history,program,user}){
-  const [msgs,setMsgs]=useState([{role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything!`,time:nowT()}]);
+  function nowT(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+  const sessionId=useRef(Date.now().toString());
+  const greeting={role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything!`,time:nowT()};
+
+  const [msgs,setMsgs]=useState([greeting]);
+  const [sessions,setSessions]=useState(()=>ls.get("gr_chat_sessions",[]));
+  const [view,setView]=useState("chat");
+  const [viewingId,setViewingId]=useState(null);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const bottomRef=useRef(null);
   const inputRef=useRef(null);
+
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
-  function nowT(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+
+  useEffect(()=>{
+    if(msgs.filter(m=>m.role==="user").length===0)return;
+    const title=msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat";
+    const session={id:sessionId.current,date:new Date().toISOString(),title,msgs};
+    setSessions(prev=>{
+      const updated=[session,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50);
+      ls.set("gr_chat_sessions",updated);
+      return updated;
+    });
+  },[msgs]);
+
   const send=async()=>{
     if(!input.trim()||loading)return;
     const text=input.trim(); setInput("");
@@ -700,12 +719,52 @@ Last 15 sessions: ${JSON.stringify(hist)}
       const r=await fetch(`${apiBase}/api/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemPrompt:sys,messages:[...msgs.slice(1),{role:"user",text}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:"ai",text:d.reply??"Connection error.",time:nowT()}]);
-    }catch(e){ console.error("[chat] fetch error:",e); setMsgs(m=>[...m,{role:"ai",text:"Connection error!",time:nowT()}]); }
+    }catch(e){console.error("[chat] fetch error:",e);setMsgs(m=>[...m,{role:"ai",text:"Connection error!",time:nowT()}]);}
     setLoading(false);
   };
+
+  if(view==="history"){
+    const past=sessions.filter(s=>s.id!==sessionId.current);
+    return(
+      <div className="chat-wrap">
+        <div className="phdr" style={{display:"flex",alignItems:"center",gap:12}}>
+          <button className="btn-ghost" onClick={()=>setView("chat")} style={{fontSize:22,lineHeight:1}}>←</button>
+          <h1>PAST CHATS</h1>
+        </div>
+        <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
+          {past.length===0&&<p style={{color:"var(--muted)",textAlign:"center",marginTop:40}}>No past chats yet.</p>}
+          {past.map(s=>(
+            <div key={s.id} className="card" style={{cursor:"pointer",marginBottom:10}} onClick={()=>{setViewingId(s.id);setView("past");}}>
+              <div style={{fontWeight:600,fontSize:14,marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
+              <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(s.date).toLocaleDateString([],{weekday:"short",year:"numeric",month:"short",day:"numeric"})}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if(view==="past"){
+    const past=sessions.find(s=>s.id===viewingId);
+    return(
+      <div className="chat-wrap">
+        <div className="phdr" style={{display:"flex",alignItems:"center",gap:12}}>
+          <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:22,lineHeight:1}}>←</button>
+          <h1 style={{fontSize:18}}>{past?.title?.slice(0,28)??"Chat"}</h1>
+        </div>
+        <div className="chat-msgs">
+          {(past?.msgs??[]).map((m,i)=>(<div key={i} className={`msg ${m.role}`}><div className="bubble">{m.text}</div><div className="msg-time">{m.time}</div></div>))}
+        </div>
+      </div>
+    );
+  }
+
   return(
     <div className="chat-wrap">
-      <div className="phdr"><h1>TRAINER</h1></div>
+      <div className="phdr" style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h1>TRAINER</h1>
+        <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:13}}>History</button>
+      </div>
       <div className="chat-msgs">
         {msgs.map((m,i)=>(<div key={i} className={`msg ${m.role}`}><div className="bubble">{m.text}</div><div className="msg-time">{m.time}</div></div>))}
         {loading&&<div className="msg ai"><div className="bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
