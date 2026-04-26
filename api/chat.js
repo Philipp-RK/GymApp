@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   console.log("[chat] Sending to Gemini. messages:", messages.length, "contents:", JSON.stringify(contents).slice(0, 200));
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${GEMINI_API_KEY}`;
 
   try {
     const response = await fetch(url, {
