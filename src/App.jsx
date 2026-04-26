@@ -797,7 +797,8 @@ export default function App() {
   const handleDemo=()=>{ if(!ls.get("gr_start",null))ls.set("gr_start",new Date().toISOString()); setUser({name:"Demo User",email:"demo@example.com",demo:true}); };
   const handleLogin=()=>{
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    const redirect = "https://gym-app-tau-vert.vercel.app";
+    if(!clientId){ handleDemo(); return; }
+    const redirect = window.location.origin;
     const scope = encodeURIComponent("openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar");
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&prompt=select_account`;
     window.location.href = url;
