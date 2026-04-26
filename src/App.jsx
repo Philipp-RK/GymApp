@@ -673,13 +673,14 @@ function HistoryDetail({session,program,onBack,onDelete}){
   </div>);
 }
 
-function TrainerChat({history,program,user}){
+function TrainerChat({history,program,user,chatSessions,onSessionsChange}){
   function nowT(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
   const sessionId=useRef(Date.now().toString());
   const greeting={role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything!`,time:nowT()};
 
   const [msgs,setMsgs]=useState([greeting]);
-  const [sessions,setSessions]=useState(()=>ls.get("gr_chat_sessions",[]));
+  const sessions=chatSessions;
+  const setSessions=onSessionsChange;
   const [view,setView]=useState("chat");
   const [viewingId,setViewingId]=useState(null);
   const [input,setInput]=useState("");
@@ -693,11 +694,7 @@ function TrainerChat({history,program,user}){
     if(msgs.filter(m=>m.role==="user").length===0)return;
     const title=msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat";
     const session={id:sessionId.current,date:new Date().toISOString(),title,msgs};
-    setSessions(prev=>{
-      const updated=[session,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50);
-      ls.set("gr_chat_sessions",updated);
-      return updated;
-    });
+    setSessions(prev=>[session,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
   },[msgs]);
 
   const send=async()=>{
@@ -792,20 +789,48 @@ Last 15 sessions: ${JSON.stringify(hist)}
 export default function App() {
   const [user,          setUser]         = useState(()=>ls.get("gr_user",null));
   const [tab,           setTab]          = useState("home");
-  const [history,       setHistory]      = useState(()=>ls.get("gr_history",[]));
-  const [program,       setProgram]      = useState(()=>ls.get("gr_program",DEFAULT_PROGRAM));
-  const [sheetId,       setSheetId]      = useState(()=>ls.get("gr_sheetId",null));
-  const [restEnabled,   setRestEnabled]  = useState(()=>ls.get("gr_rest",true));
+  const [history,       setHistory]      = useState([]);
+  const [program,       setProgram]      = useState(DEFAULT_PROGRAM);
+  const [sheetId,       setSheetId]      = useState(null);
+  const [restEnabled,   setRestEnabled]  = useState(true);
+  const [chatSessions,  setChatSessions] = useState([]);
+  const [dataLoaded,    setDataLoaded]   = useState(false);
   const [activeWorkout, setActiveWorkout]= useState(null);
   const [restTimer,     setRestTimer]    = useState(null);
   const [editingDay,    setEditingDay]   = useState(null);
   const [histDetail,    setHistDetail]   = useState(null);
-  const restRef = useRef(null);
+  const restRef   = useRef(null);
+  const saveTimer = useRef(null);
 
-  useEffect(()=>{ls.set("gr_history",history);},[history]);
-  useEffect(()=>{ls.set("gr_program",program);},[program]);
-  useEffect(()=>{ls.set("gr_rest",restEnabled);},[restEnabled]);
   useEffect(()=>{if(user)ls.set("gr_user",user);},[user]);
+
+  // Load all data from Supabase on login
+  useEffect(()=>{
+    if(!user?.accessToken||user.demo){setDataLoaded(true);return;}
+    const apiBase=import.meta.env.VITE_API_URL??"";
+    fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load",accessToken:user.accessToken})})
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.program?.length) setProgram(d.program);
+        if(d.history)         setHistory(d.history);
+        if(d.chat_sessions)   setChatSessions(d.chat_sessions);
+        if(d.sheet_id)        setSheetId(d.sheet_id);
+        if(typeof d.rest_enabled==="boolean") setRestEnabled(d.rest_enabled);
+        setDataLoaded(true);
+      })
+      .catch(()=>setDataLoaded(true));
+  },[user?.accessToken]);
+
+  // Debounced save to Supabase whenever data changes
+  useEffect(()=>{
+    if(!user?.accessToken||user.demo||!dataLoaded) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current=setTimeout(()=>{
+      const apiBase=import.meta.env.VITE_API_URL??"";
+      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled})}).catch(console.error);
+    },1500);
+    return()=>clearTimeout(saveTimer.current);
+  },[program,history,chatSessions,sheetId,restEnabled,dataLoaded]);
 
   useEffect(()=>{
     const hash=window.location.hash;
@@ -869,7 +894,7 @@ export default function App() {
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&prompt=select_account`;
     window.location.href = url;
   };
-  const handleConnectSheets=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); try{ const r=await fetch("/api/sheets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"create",accessToken:user.accessToken})}); const d=await r.json(); if(d.spreadsheetId){setSheetId(d.spreadsheetId);ls.set("gr_sheetId",d.spreadsheetId);alert("Google Sheet created!");} }catch{alert("Error.");} };
+  const handleConnectSheets=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); try{ const r=await fetch("/api/sheets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"create",accessToken:user.accessToken})}); const d=await r.json(); if(d.spreadsheetId){setSheetId(d.spreadsheetId);alert("Google Sheet created!");} }catch{alert("Error.");} };
   const handleCalendar=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); const r=await fetch("/api/calendar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accessToken:user.accessToken,startDate:ls.get("gr_start",new Date().toISOString())})}); const d=await r.json(); if(d.ok)alert(`${d.eventsCreated} calendar reminders added!`); };
 
   const totalSessions=history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).length;
@@ -884,6 +909,8 @@ export default function App() {
     <button className="google-btn" onClick={handleLogin}><Ic.Google/> Continue with Google</button>
     <button className="demo-lnk" onClick={handleDemo}>Try without signing in</button>
   </div></>);
+
+  if(!dataLoaded) return(<><style>{CSS}</style><div className="login"><div className="login-logo">GRIND</div><p style={{color:"var(--muted)"}}>Loading your data...</p></div></>);
 
   if(activeWorkout) return(<><style>{CSS}</style><div className="app">
     <WorkoutSession workout={activeWorkout} history={history} onFinish={handleFinish} onBack={()=>setActiveWorkout(null)} startRest={startRest} restEnabled={restEnabled}/>
@@ -969,7 +996,7 @@ export default function App() {
       </div>
     </>}
 
-    {tab==="chat"&&<TrainerChat history={history} program={program} user={user}/>}
+    {tab==="chat"&&<TrainerChat history={history} program={program} user={user} chatSessions={chatSessions} onSessionsChange={setChatSessions}/>}
 
     {tab==="settings"&&<>
       <div className="phdr"><h1>SETTINGS</h1><p>{user.email}</p></div>
