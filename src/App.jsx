@@ -388,6 +388,13 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .login-tagline{color:var(--muted2);font-size:15px;margin:6px 0 48px;line-height:1.7;}
 .google-btn{display:flex;align-items:center;gap:12px;padding:13px 26px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--db);font-size:16px;font-weight:500;cursor:pointer;margin-bottom:14px;}
 .demo-lnk{background:none;border:none;color:var(--muted2);font-family:var(--db);font-size:13px;cursor:pointer;text-decoration:underline;margin-top:4px;}
+.proposal-card{background:var(--s1);border:1.5px solid var(--accent);border-radius:14px;padding:14px;max-width:92%;align-self:flex-start;margin-top:-2px;}
+.proposal-title{font-family:var(--df);font-size:14px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;}
+.proposal-change{font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--border);line-height:1.5;}
+.proposal-change:last-of-type{border-bottom:none;}
+.proposal-btns{display:flex;gap:8px;margin-top:12px;}
+.proposal-accept{flex:1;padding:10px;background:var(--gbg);border:1px solid var(--gborder);border-radius:9px;color:#88cc88;font-family:var(--df);font-size:14px;letter-spacing:1px;cursor:pointer;}
+.proposal-dismiss{padding:10px 16px;background:var(--s2);border:1px solid var(--border);border-radius:9px;color:var(--muted2);font-family:var(--db);font-size:12px;cursor:pointer;}
 `;
 
 const Ic = {
@@ -673,7 +680,39 @@ function HistoryDetail({session,program,onBack,onDelete}){
   </div>);
 }
 
-function TrainerChat({history,program,user,chatSessions,onSessionsChange}){
+function computeProgramDiff(current,proposed){
+  const changes=[];
+  for(const curDay of current){
+    const propDay=proposed.find(d=>d.id===curDay.id);
+    if(!propDay){changes.push({type:"day_removed",label:curDay.label});continue;}
+    if(propDay.label!==curDay.label) changes.push({type:"day_renamed",from:curDay.label,to:propDay.label});
+    for(const curEx of curDay.exercises){
+      const propEx=propDay.exercises.find(e=>e.id===curEx.id);
+      if(!propEx){
+        changes.push({type:"ex_removed",day:propDay.label,name:curEx.name});
+      }else{
+        const diffs=[];
+        if(propEx.sets!==curEx.sets) diffs.push(`sets: ${curEx.sets}→${propEx.sets}`);
+        if(propEx.reps!==curEx.reps) diffs.push(`reps: ${curEx.reps}→${propEx.reps}`);
+        if(Number(propEx.weight)!==Number(curEx.weight)) diffs.push(`weight: ${curEx.weight}→${propEx.weight}kg`);
+        if(propEx.rest!==curEx.rest) diffs.push(`rest: ${curEx.rest}→${propEx.rest}s`);
+        if(propEx.name!==curEx.name) diffs.push(`renamed to "${propEx.name}"`);
+        if(diffs.length>0) changes.push({type:"ex_modified",day:propDay.label,name:curEx.name,diffs});
+      }
+    }
+    for(const propEx of propDay.exercises){
+      if(!curDay.exercises.find(e=>e.id===propEx.id))
+        changes.push({type:"ex_added",day:propDay.label,name:propEx.name,detail:`${propEx.sets}x${propEx.reps} @ ${propEx.weight}kg`});
+    }
+  }
+  for(const propDay of proposed){
+    if(!current.find(d=>d.id===propDay.id))
+      changes.push({type:"day_added",label:propDay.label});
+  }
+  return changes;
+}
+
+function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgramChange}){
   function nowT(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
   const sessionId=useRef(Date.now().toString());
   const greeting={role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything!`,time:nowT()};
@@ -697,25 +736,56 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange}){
     setSessions(prev=>[session,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
   },[msgs]);
 
+  const acceptProposal=(msgIdx)=>{
+    const msg=msgs[msgIdx];
+    if(!msg?.proposal||msg.proposal.status!=="pending")return;
+    onProgramChange(msg.proposal.program);
+    setMsgs(m=>m.map((x,i)=>i===msgIdx?{...x,proposal:{...x.proposal,status:"accepted"}}:x));
+  };
+  const dismissProposal=(msgIdx)=>{
+    setMsgs(m=>m.map((x,i)=>i===msgIdx?{...x,proposal:{...x.proposal,status:"dismissed"}}:x));
+  };
+
   const send=async()=>{
     if(!input.trim()||loading)return;
     const text=input.trim(); setInput("");
     setMsgs(m=>[...m,{role:"user",text,time:nowT()}]); setLoading(true);
-    const progSum=program.filter(d=>!d.isRest).map(d=>({name:d.label,exercises:d.exercises.map(e=>`${e.name} ${e.sets}x${e.reps} @ ${e.weight}kg`)}));
+    const progJson=program.map(d=>({id:d.id,label:d.label,color:d.color,isRest:d.isRest,exercises:d.exercises.map(e=>({id:e.id,name:e.name,sets:e.sets,reps:e.reps,weight:e.weight,rest:e.rest}))}));
     const hist=history.slice(-15).map(s=>({date:s.date?.slice(0,10),day:s.dayKey,duration:s.duration,note:s.note,exercises:s.exercises?.map(e=>({name:e.name,weight:e.weight,sets:e.sets?.map(st=>st.skipped?"skip":(st.reps||"?"))}))}));
     const sys = `
 You are a personal gym trainer AI.
 Always respond in English unless the user writes in another language.
 Rules: concise (3-5 sentences), no filler, specific recommendations.
 
-Program: ${JSON.stringify(progSum)}
+Current program (JSON with IDs — use this exact structure when proposing updates):
+${JSON.stringify(progJson)}
+
 Last 15 sessions: ${JSON.stringify(hist)}
+
+IMPORTANT: If the user asks you to change, update, or modify their workout program:
+1. Briefly explain the changes (2-3 sentences)
+2. End your response with this exact block:
+<PROGRAM_UPDATE>
+[complete updated program JSON array, ALL days, same structure as above]
+</PROGRAM_UPDATE>
+Only include <PROGRAM_UPDATE> when proposing program changes. Never include it for general questions.
 `;
     try{
       const apiBase=import.meta.env.VITE_API_URL??"";
       const r=await fetch(`${apiBase}/api/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemPrompt:sys,messages:[...msgs.slice(1),{role:"user",text}]})});
       const d=await r.json();
-      setMsgs(m=>[...m,{role:"ai",text:d.reply??"Connection error.",time:nowT()}]);
+      let reply=d.reply??"Connection error.";
+      let proposalData=null;
+      const match=reply.match(/<PROGRAM_UPDATE>([\s\S]*?)<\/PROGRAM_UPDATE>/);
+      if(match){
+        try{
+          const proposedProg=JSON.parse(match[1].trim());
+          const changes=computeProgramDiff(program,proposedProg);
+          if(changes.length>0) proposalData={program:proposedProg,changes,status:"pending"};
+        }catch(e){console.error("[chat] proposal parse error:",e);}
+        reply=reply.replace(/<PROGRAM_UPDATE>[\s\S]*?<\/PROGRAM_UPDATE>/,"").trim();
+      }
+      setMsgs(m=>[...m,{role:"ai",text:reply,time:nowT(),...(proposalData?{proposal:proposalData}:{})}]);
     }catch(e){console.error("[chat] fetch error:",e);setMsgs(m=>[...m,{role:"ai",text:"Connection error!",time:nowT()}]);}
     setLoading(false);
   };
@@ -763,7 +833,35 @@ Last 15 sessions: ${JSON.stringify(hist)}
         <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:13}}>History</button>
       </div>
       <div className="chat-msgs">
-        {msgs.map((m,i)=>(<div key={i} className={`msg ${m.role}`}><div className="bubble">{m.text}</div><div className="msg-time">{m.time}</div></div>))}
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:"contents"}}>
+            <div className={`msg ${m.role}`}><div className="bubble">{m.text}</div><div className="msg-time">{m.time}</div></div>
+            {m.proposal&&(
+              <div className="proposal-card">
+                <div className="proposal-title">PROGRAM PROPOSAL</div>
+                <div>
+                  {m.proposal.changes.map((c,ci)=>{
+                    if(c.type==="ex_modified") return(<div key={ci} className="proposal-change"><span style={{color:"var(--muted2)",fontSize:11}}>{c.day} — </span><span style={{fontWeight:600}}>{c.name}</span><span style={{color:"var(--muted)",marginLeft:6,fontSize:11}}>{c.diffs.join(", ")}</span></div>);
+                    if(c.type==="ex_added") return(<div key={ci} className="proposal-change"><span style={{color:"var(--muted2)",fontSize:11}}>{c.day} — </span><span style={{color:"#88cc88"}}>+ {c.name}</span><span style={{color:"var(--muted)",marginLeft:6,fontSize:11}}>{c.detail}</span></div>);
+                    if(c.type==="ex_removed") return(<div key={ci} className="proposal-change"><span style={{color:"var(--muted2)",fontSize:11}}>{c.day} — </span><span style={{color:"#e24b4a"}}>- {c.name}</span></div>);
+                    if(c.type==="day_added") return(<div key={ci} className="proposal-change"><span style={{color:"#88cc88"}}>+ New day: {c.label}</span></div>);
+                    if(c.type==="day_removed") return(<div key={ci} className="proposal-change"><span style={{color:"#e24b4a"}}>- Removed: {c.label}</span></div>);
+                    if(c.type==="day_renamed") return(<div key={ci} className="proposal-change"><span style={{color:"var(--muted2)"}}>{c.from} → {c.to}</span></div>);
+                    return null;
+                  })}
+                </div>
+                {m.proposal.status==="pending"&&(
+                  <div className="proposal-btns">
+                    <button className="proposal-accept" onClick={()=>acceptProposal(i)}>✓ APPLY CHANGES</button>
+                    <button className="proposal-dismiss" onClick={()=>dismissProposal(i)}>Dismiss</button>
+                  </div>
+                )}
+                {m.proposal.status==="accepted"&&<div style={{marginTop:10,color:"#88cc88",fontSize:13}}>✓ Applied to your program</div>}
+                {m.proposal.status==="dismissed"&&<div style={{marginTop:10,color:"var(--muted)",fontSize:12}}>Dismissed</div>}
+              </div>
+            )}
+          </div>
+        ))}
         {loading&&<div className="msg ai"><div className="bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
         <div ref={bottomRef}/>
       </div>
@@ -996,7 +1094,7 @@ export default function App() {
       </div>
     </>}
 
-    {tab==="chat"&&<TrainerChat history={history} program={program} user={user} chatSessions={chatSessions} onSessionsChange={setChatSessions}/>}
+    {tab==="chat"&&<TrainerChat history={history} program={program} user={user} chatSessions={chatSessions} onSessionsChange={setChatSessions} onProgramChange={setProgram}/>}
 
     {tab==="settings"&&<>
       <div className="phdr"><h1>SETTINGS</h1><p>{user.email}</p></div>
