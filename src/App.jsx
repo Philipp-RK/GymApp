@@ -689,9 +689,8 @@ function TrainerChat({history,program,user}){
     const hist=history.slice(-15).map(s=>({date:s.date?.slice(0,10),day:s.dayKey,duration:s.duration,note:s.note,exercises:s.exercises?.map(e=>({name:e.name,weight:e.weight,sets:e.sets?.map(st=>st.skipped?"skip":(st.reps||"?"))}))}));
     const sys = `
 You are a personal gym trainer AI.
-Be direct, motivating, and practical.
 Always respond in English unless the user writes in another language.
-Rules: concise (3-5 sentences), no filler, specific recommendations, humor if legs are skipped.
+Rules: concise (3-5 sentences), no filler, specific recommendations.
 
 Program: ${JSON.stringify(progSum)}
 Last 15 sessions: ${JSON.stringify(hist)}
