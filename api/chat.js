@@ -8,7 +8,9 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { messages, systemPrompt } = req.body;
+  const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body ?? {});
+  const { messages, systemPrompt } = body;
+  console.log("[chat] body parsed, messages:", !!messages);
   if (!messages) return res.status(400).json({ error: "Missing messages" });
 
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
