@@ -1,6 +1,3 @@
-// api/chat.js  —  Vercel Serverless Function
-// Proxies requests to Google Gemini. The API key stays server-side only.
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -10,63 +7,43 @@ export default async function handler(req, res) {
 
   const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body ?? {});
   const { messages, systemPrompt } = body;
-  console.log("[chat] body parsed, messages:", !!messages);
   if (!messages) return res.status(400).json({ error: "Missing messages" });
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  console.log("[chat] GEMINI_API_KEY present:", !!GEMINI_API_KEY, "length:", GEMINI_API_KEY?.length ?? 0);
-  if (!GEMINI_API_KEY) return res.status(500).json({ error: "Gemini API key not configured" });
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) return res.status(500).json({ error: "Groq API key not configured" });
 
-  // Build Gemini contents array from chat history
-  // Gemini uses "user" / "model" roles (not "assistant")
-  const contents = messages.map((m) => ({
-    role: m.role === "ai" ? "model" : "user",
-    parts: [{ text: m.text }],
-  }));
-
-  console.log("[chat] Sending to Gemini. messages:", messages.length, "contents:", JSON.stringify(contents).slice(0, 200));
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
+  const groqMessages = [];
+  if (systemPrompt) groqMessages.push({ role: "system", content: systemPrompt });
+  for (const m of messages) {
+    groqMessages.push({ role: m.role === "ai" ? "assistant" : "user", content: m.text });
+  }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
       body: JSON.stringify({
-        systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
-        contents,
-        generationConfig: {
-          maxOutputTokens: 800,
-          temperature: 0.7,
-        },
+        model: "llama-3.1-8b-instant",
+        messages: groqMessages,
+        max_tokens: 800,
+        temperature: 0.7,
       }),
     });
 
-    console.log("[chat] Gemini response status:", response.status, response.statusText);
-
-    const rawText = await response.text();
-    console.log("[chat] Gemini raw response:", rawText.slice(0, 500));
+    const data = await response.json();
 
     if (!response.ok) {
-      console.error(`[chat] Gemini API error ${response.status}:`, rawText);
-      let errDetail;
-      try { errDetail = JSON.parse(rawText); } catch { errDetail = rawText; }
-      return res.status(500).json({ error: "Gemini error", status: response.status, detail: errDetail });
+      console.error("[chat] Groq error:", JSON.stringify(data));
+      return res.status(500).json({ error: "Groq error", detail: data });
     }
 
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (parseErr) {
-      console.error("[chat] Failed to parse Gemini JSON:", parseErr.message, rawText.slice(0, 200));
-      return res.status(500).json({ error: "Invalid JSON from Gemini", detail: rawText.slice(0, 200) });
-    }
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "Sorry, I couldn't respond right now.";
-    console.log("[chat] Extracted reply length:", reply.length);
+    const reply = data.choices?.[0]?.message?.content ?? "Sorry, I couldn't respond right now.";
     return res.status(200).json({ reply });
   } catch (err) {
-    console.error("[chat] Gemini fetch error:", err.name, err.message);
+    console.error("[chat] fetch error:", err.message);
     return res.status(500).json({ error: err.message });
   }
 }
