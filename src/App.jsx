@@ -73,6 +73,13 @@ const ls = {
 };
 function uid() { return Math.random().toString(36).slice(2,9); }
 
+const DEFAULT_TRACKER_GOALS = [
+  { id:"calories", name:"Calories",    unit:"kcal",    target:2500, color:"#FF6B35", builtIn:true },
+  { id:"water",    name:"Water",       unit:"glasses", target:8,    color:"#4ECDC4", builtIn:true },
+  { id:"weight",   name:"Body Weight", unit:"kg",      target:null, color:"#C77DFF", builtIn:true },
+  { id:"creatine", name:"Creatine",    unit:"g",       target:5,    color:"#FFD166", builtIn:true },
+];
+
 function getDayStatus(dateObj, program, history, startDate) {
   const base = new Date(startDate);
   const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
@@ -411,6 +418,7 @@ const Ic = {
   Grip:     ()=><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><circle cx="9" cy="7" r="1.5"/><circle cx="15" cy="7" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="17" r="1.5"/><circle cx="15" cy="17" r="1.5"/></svg>,
   Plus:     ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   Google:   ()=><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>,
+  Target:   ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>,
 };
 
 function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChange, onRepsChange, onRestChange, onFieldBlur, onSkip, onRemoveSet, onCheck, onAddSet }) {
@@ -884,6 +892,133 @@ Only include <PROGRAM_UPDATE> when proposing program changes. Never include it f
   );
 }
 
+function TrackerTab({ goals, setGoals, logs, setLogs }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const todayLog = logs.find(l => l.date === today) || { date: today, entries: {} };
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUnit, setNewUnit] = useState("×");
+  const [newTarget, setNewTarget] = useState("");
+  const [editTarget, setEditTarget] = useState(null);
+
+  const getValue = id => { const v = todayLog.entries[id]; return (v !== null && v !== undefined) ? v : ""; };
+
+  const updateEntry = (id, val) => {
+    const num = val === "" ? null : parseFloat(val);
+    setLogs(ls => {
+      const i = ls.findIndex(l => l.date === today);
+      if (i >= 0) { const u=[...ls]; u[i]={...u[i],entries:{...u[i].entries,[id]:num}}; return u; }
+      return [...ls, { date: today, entries: { [id]: num } }];
+    });
+  };
+
+  const step = (id, dir) => {
+    const v = parseFloat(getValue(id)) || 0;
+    const g = goals.find(g => g.id === id);
+    const inc = g?.unit === "kcal" ? 50 : g?.unit === "kg" ? 0.5 : 1;
+    updateEntry(id, Math.max(0, parseFloat((v + dir * inc).toFixed(2))));
+  };
+
+  const addGoal = () => {
+    if (!newName.trim()) return;
+    const palette = ["#FF6B35","#4ECDC4","#C77DFF","#FFD166","#4CAF50","#f59e0b","#a78bfa","#ee6b6e"];
+    const g = { id:uid(), name:newName.trim(), unit:newUnit.trim()||"×", target:newTarget?parseFloat(newTarget):null, color:palette[goals.length%palette.length], builtIn:false };
+    setGoals(gs => [...gs, g]);
+    setNewName(""); setNewUnit("×"); setNewTarget(""); setShowAdd(false);
+  };
+
+  const removeGoal = id => setGoals(gs => gs.filter(g => g.id !== id));
+
+  const saveTarget = (id, val) => {
+    setGoals(gs => gs.map(g => g.id === id ? { ...g, target: val ? parseFloat(val) : null } : g));
+    setEditTarget(null);
+  };
+
+  const dateStr = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
+
+  return (<>
+    <div className="phdr"><h1>TRACK</h1><p>{dateStr}</p></div>
+    <div className="scroll">
+      {goals.map(g => {
+        const val = getValue(g.id);
+        const numVal = parseFloat(val);
+        const pct = g.target && !isNaN(numVal) ? Math.min(100, (numVal / g.target) * 100) : null;
+        const reached = pct !== null && pct >= 100;
+        return (
+          <div key={g.id} className="card" style={{borderColor:g.color+"44"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:"var(--df)",fontSize:17,letterSpacing:1,color:g.color}}>{g.name}</div>
+                {editTarget === g.id ? (
+                  <div style={{display:"flex",gap:6,marginTop:4}}>
+                    <input id={`tgt-${g.id}`} type="number" defaultValue={g.target??""} placeholder="target"
+                      style={{width:70,background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:6,color:"var(--text)",fontSize:12,padding:"3px 6px"}}/>
+                    <button onClick={()=>{const v=document.getElementById(`tgt-${g.id}`).value;saveTarget(g.id,v);}}
+                      style={{background:"var(--accent)",border:"none",borderRadius:6,color:"#fff",fontSize:12,padding:"3px 8px",cursor:"pointer"}}>OK</button>
+                    <button onClick={()=>setEditTarget(null)}
+                      style={{background:"var(--s2)",border:"1px solid var(--border)",borderRadius:6,color:"var(--muted)",fontSize:12,padding:"3px 8px",cursor:"pointer"}}>✕</button>
+                  </div>
+                ) : (
+                  <div style={{fontSize:11,color:"var(--muted)",marginTop:2,cursor:"pointer"}} onClick={()=>setEditTarget(g.id)}>
+                    {g.target ? `Goal: ${g.target} ${g.unit}` : <span style={{color:"var(--border2)"}}>tap to set goal</span>}
+                  </div>
+                )}
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <button onClick={()=>step(g.id,-1)} style={{width:32,height:32,borderRadius:8,background:"var(--s2)",border:"1px solid var(--border)",color:"var(--text)",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,flexShrink:0}}>−</button>
+                <div style={{textAlign:"center",minWidth:64}}>
+                  <input type="number" value={val} onChange={e=>updateEntry(g.id,e.target.value)}
+                    style={{width:64,background:"none",border:"none",color:reached?"#4CAF50":"var(--text)",fontSize:26,fontFamily:"var(--df)",textAlign:"center",padding:0,outline:"none"}}/>
+                  <div style={{fontSize:10,color:"var(--muted)",marginTop:-2}}>{g.unit}</div>
+                </div>
+                <button onClick={()=>step(g.id,1)} style={{width:32,height:32,borderRadius:8,background:"var(--s2)",border:"1px solid var(--border)",color:"var(--text)",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,flexShrink:0}}>+</button>
+                {!g.builtIn&&<button onClick={()=>removeGoal(g.id)} style={{width:24,height:24,borderRadius:6,background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,lineHeight:1,marginLeft:2}}>×</button>}
+              </div>
+            </div>
+            {pct!==null&&<div style={{height:4,borderRadius:2,background:"var(--s3)",overflow:"hidden",marginTop:10}}>
+              <div style={{height:"100%",width:`${pct}%`,background:reached?"#4CAF50":g.color,borderRadius:2,transition:"width .3s"}}/>
+            </div>}
+          </div>
+        );
+      })}
+
+      {showAdd ? (
+        <div className="card">
+          <div className="ctitle" style={{fontSize:14}}>NEW TRACKER</div>
+          <div className="form-lbl">Name</div>
+          <input className="form-input" placeholder="e.g. Protein, Steps, Sleep hours..." value={newName} onChange={e=>setNewName(e.target.value)}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}}>
+            <div><div className="form-lbl">Unit</div><input className="form-input" placeholder="g, ml, hrs..." value={newUnit} onChange={e=>setNewUnit(e.target.value)}/></div>
+            <div><div className="form-lbl">Daily Goal</div><input className="form-input" type="number" placeholder="optional" value={newTarget} onChange={e=>setNewTarget(e.target.value)}/></div>
+          </div>
+          <div style={{display:"flex",gap:8,marginTop:12}}>
+            <button className="btn-ghost" style={{flex:1,padding:"10px 0"}} onClick={()=>{setShowAdd(false);setNewName("");setNewUnit("×");setNewTarget("");}}>Cancel</button>
+            <button className="btn-accent" style={{flex:2,fontSize:16,padding:12}} onClick={addGoal}>ADD</button>
+          </div>
+        </div>
+      ) : (
+        <button className="btn-accent" style={{background:"var(--s2)",color:"var(--muted2)",border:"1px solid var(--border)",fontSize:15}} onClick={()=>setShowAdd(true)}>+ ADD TRACKER</button>
+      )}
+
+      {[...logs].reverse().filter(l=>l.date!==today&&Object.values(l.entries).some(v=>v!==null&&v!==undefined)).slice(0,7).length>0&&(
+        <div className="card" style={{marginTop:6}}>
+          <div className="ctitle" style={{fontSize:14,marginBottom:12}}>RECENT LOG</div>
+          {[...logs].reverse().filter(l=>l.date!==today&&Object.values(l.entries).some(v=>v!==null&&v!==undefined)).slice(0,7).map(log=>(
+            <div key={log.date} style={{paddingBottom:10,marginBottom:10,borderBottom:"1px solid var(--border)"}}>
+              <div style={{fontSize:11,color:"var(--muted)",marginBottom:5}}>
+                {new Date(log.date+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {goals.map(g=>{const v=log.entries[g.id];if(v===null||v===undefined)return null;return<span key={g.id} style={{fontSize:12,background:g.color+"22",color:g.color,borderRadius:20,padding:"2px 8px",border:`1px solid ${g.color}33`}}>{g.name}: {v} {g.unit}</span>;})}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </>);
+}
+
 export default function App() {
   const [user,          setUser]         = useState(()=>ls.get("gr_user",null));
   const [tab,           setTab]          = useState("home");
@@ -892,6 +1027,8 @@ export default function App() {
   const [sheetId,       setSheetId]      = useState(null);
   const [restEnabled,   setRestEnabled]  = useState(true);
   const [chatSessions,  setChatSessions] = useState([]);
+  const [trackerGoals,  setTrackerGoals] = useState(DEFAULT_TRACKER_GOALS);
+  const [trackerLogs,   setTrackerLogs]  = useState([]);
   const [dataLoaded,    setDataLoaded]   = useState(false);
   const [activeWorkout, setActiveWorkout]= useState(null);
   const [restTimer,     setRestTimer]    = useState(null);
@@ -914,6 +1051,8 @@ export default function App() {
         if(d.chat_sessions)   setChatSessions(d.chat_sessions);
         if(d.sheet_id)        setSheetId(d.sheet_id);
         if(typeof d.rest_enabled==="boolean") setRestEnabled(d.rest_enabled);
+        if(d.tracker_goals?.length) setTrackerGoals(d.tracker_goals);
+        if(d.tracker_logs)    setTrackerLogs(d.tracker_logs);
         setDataLoaded(true);
       })
       .catch(()=>setDataLoaded(true));
@@ -925,10 +1064,10 @@ export default function App() {
     clearTimeout(saveTimer.current);
     saveTimer.current=setTimeout(()=>{
       const apiBase=import.meta.env.VITE_API_URL??"";
-      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled})}).catch(console.error);
+      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled,tracker_goals:trackerGoals,tracker_logs:trackerLogs})}).catch(console.error);
     },1500);
     return()=>clearTimeout(saveTimer.current);
-  },[program,history,chatSessions,sheetId,restEnabled,dataLoaded]);
+  },[program,history,chatSessions,sheetId,restEnabled,trackerGoals,trackerLogs,dataLoaded]);
 
   useEffect(()=>{
     const hash=window.location.hash;
@@ -1052,6 +1191,28 @@ export default function App() {
           </>:<p style={{color:"var(--muted2)",marginTop:8,fontSize:14}}>Recovery is part of the process. Rest up.</p>}
         </div>
         <MiniCalendar program={program} history={history} todayIdx={todayIdx} startDate={ls.get("gr_start",null)}/>
+        <div className="card">
+          <div className="ctitle" style={{fontSize:14,marginBottom:history.length===0?0:10}}>WORKOUT HISTORY</div>
+          {history.length===0
+            ? <p style={{fontSize:13,color:"var(--muted)"}}>No sessions logged yet.</p>
+            : [...history].reverse().map((s,i)=>{
+                const day=program.find(d=>d.id===s.dayKey);
+                return(
+                  <div key={i} className="hist-card" onClick={()=>setHistDetail(s)} style={{margin:"0 0 8px",padding:"10px 12px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div>
+                        <div style={{fontWeight:600,fontSize:13,color:day?.color}}>{day?.label??s.dayKey}</div>
+                        <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>
+                          {new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} &bull; {s.duration}min
+                        </div>
+                      </div>
+                      <div style={{fontSize:14,color:"var(--muted)"}}>&#8250;</div>
+                    </div>
+                  </div>
+                );
+              })
+          }
+        </div>
       </div>
     </>}
 
@@ -1078,21 +1239,7 @@ export default function App() {
       </div>
     </>}
 
-    {tab==="history"&&<>
-      <div className="phdr"><h1>HISTORY</h1><p>{totalSessions} sessions</p></div>
-      <div className="scroll">
-        {history.length===0&&<p style={{textAlign:"center",color:"var(--muted)",marginTop:40}}>No sessions yet</p>}
-        {[...history].reverse().map((s,i)=>{ const day=program.find(d=>d.id===s.dayKey); return(<div key={i} className="hist-card" onClick={()=>setHistDetail(s)}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-            <div><div style={{fontWeight:600,color:day?.color}}>{day?.label??s.dayKey}</div><div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>{new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} &bull; {s.duration}min</div></div>
-            <div style={{fontSize:11,color:"var(--muted)",alignSelf:"center"}}>View &#8250;</div>
-          </div>
-          {s.exercises?.filter(e=>!e.skipped).slice(0,3).map((ex,j)=>(<div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--muted2)",padding:"2px 0"}}><span>{ex.name}</span><span>{ex.weight}kg &bull; {ex.sets?.filter(st=>!st.skipped&&st.reps).map(st=>st.reps).join("/")}</span></div>))}
-          {s.exercises?.filter(e=>!e.skipped).length>3&&<div style={{fontSize:11,color:"var(--muted)",marginTop:3}}>+{s.exercises.filter(e=>!e.skipped).length-3} more</div>}
-          {s.note&&<div style={{marginTop:6,fontSize:12,color:"var(--muted2)",fontStyle:"italic"}}>&ldquo;{s.note}&rdquo;</div>}
-        </div>); })}
-      </div>
-    </>}
+    {tab==="tracker"&&<TrackerTab goals={trackerGoals} setGoals={setTrackerGoals} logs={trackerLogs} setLogs={setTrackerLogs}/>}
 
     {tab==="chat"&&<TrainerChat history={history} program={program} user={user} chatSessions={chatSessions} onSessionsChange={setChatSessions} onProgramChange={setProgram}/>}
 
@@ -1109,7 +1256,7 @@ export default function App() {
       </div>
     </>}
 
-    <nav className="bnav">{[{id:"home",label:"Home",icon:<Ic.Home/>},{id:"workout",label:"Program",icon:<Ic.Dumbbell/>},{id:"history",label:"History",icon:<Ic.Clock/>},{id:"chat",label:"Trainer",icon:<Ic.Chat/>},{id:"settings",label:"Settings",icon:<Ic.Cog/>}].map(n=>(<button key={n.id} className={`nbtn ${tab===n.id?"on":""}`} onClick={()=>setTab(n.id)}>{n.icon}{n.label}</button>))}</nav>
+    <nav className="bnav">{[{id:"home",label:"Home",icon:<Ic.Home/>},{id:"workout",label:"Program",icon:<Ic.Dumbbell/>},{id:"tracker",label:"Track",icon:<Ic.Target/>},{id:"chat",label:"Trainer",icon:<Ic.Chat/>},{id:"settings",label:"Settings",icon:<Ic.Cog/>}].map(n=>(<button key={n.id} className={`nbtn ${tab===n.id?"on":""}`} onClick={()=>setTab(n.id)}>{n.icon}{n.label}</button>))}</nav>
 
     {editingDay&&<DayEditor day={editingDay} onClose={()=>setEditingDay(null)}
       onSave={upd=>{ const hasEx=upd.exercises.length>0; updateDay(editingDay.id,{...upd,isRest:!hasEx}); setEditingDay(null); }}
