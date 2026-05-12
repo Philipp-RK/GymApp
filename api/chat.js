@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body ?? {});
-  const { messages, systemPrompt } = body;
+  const { messages, systemPrompt, maxTokens } = body;
   if (!messages) return res.status(400).json({ error: "Missing messages" });
 
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: groqMessages,
-        max_tokens: 4000,
+        max_tokens: maxTokens ?? 800,
         temperature: 0.7,
       }),
     });
