@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 function getSetLabel(sets, si) {
@@ -1815,6 +1816,7 @@ export default function App() {
     <p className="login-tagline">Your free AI personal trainer.<br/>Track. Progress. Never skip leg day.</p>
     <button className="google-btn" onClick={handleLogin}><Ic.Google/> Continue with Google</button>
     <button className="demo-lnk" onClick={handleDemo}>Try without signing in</button>
+    <Analytics />
   </div></>);
 
   if(!dataLoaded) return(<><style>{CSS}</style><div className="login"><div className="login-logo">GRIND</div><p style={{color:"var(--muted)"}}>Loading your data...</p></div></>);
@@ -1822,10 +1824,12 @@ export default function App() {
   if(activeWorkout) return(<><style>{CSS}</style><div className="app">
     <WorkoutSession workout={activeWorkout} history={history} onFinish={handleFinish} onBack={()=>setActiveWorkout(null)} startRest={startRest} restEnabled={restEnabled}/>
     {restTimer!==null&&(<div className="rest-overlay"><div className="rest-lbl">REST</div><div className="rest-num" style={{color:restTimer<=10?"var(--accent)":"var(--text)"}}>{restTimer}</div><button className="rest-skip" onClick={()=>{clearInterval(restRef.current);setRestTimer(null);}}>SKIP REST</button></div>)}
+    <Analytics />
   </div></>);
 
   if(histDetail) return(<><style>{CSS}</style><div className="app">
     <HistoryDetail session={histDetail} program={program} onBack={()=>setHistDetail(null)} onDelete={()=>{setHistory(h=>h.filter(s=>!(s.date===histDetail.date&&s.dayKey===histDetail.dayKey)));setHistDetail(null);}}/>
+    <Analytics />
   </div></>);
 
   return(<><style>{CSS}</style>{themeCSS&&<style>{themeCSS}</style>}<div className="app" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
@@ -2067,5 +2071,6 @@ export default function App() {
       onRemoveEx={eid=>{ removeEx(editingDay.id,eid); setEditingDay(d=>{ const exs=d.exercises.filter(e=>e.id!==eid); return{...d,exercises:exs,isRest:exs.length===0}; }); }}
       onDelete={()=>{ setProgram(p=>p.filter(d=>d.id!==editingDay.id)); setEditingDay(null); }}
     />}
+    <Analytics />
   </div></>);
 }
