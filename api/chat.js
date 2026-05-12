@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
         messages: groqMessages,
         max_tokens: maxTokens ?? 800,
         temperature: 0.7,
@@ -36,14 +36,15 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("[chat] Groq error:", JSON.stringify(data));
-      return res.status(500).json({ error: "Groq error", detail: data });
+      const msg = data?.error?.message ?? JSON.stringify(data);
+      console.error(`[chat] Groq ${response.status}:`, msg);
+      return res.status(200).json({ error: `Groq ${response.status}: ${msg}` });
     }
 
     const reply = data.choices?.[0]?.message?.content ?? "Sorry, I couldn't respond right now.";
     return res.status(200).json({ reply });
   } catch (err) {
     console.error("[chat] fetch error:", err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(200).json({ error: err.message });
   }
 }

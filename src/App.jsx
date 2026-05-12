@@ -873,17 +873,19 @@ function getSmartPrompts(history,streak,trackerLogs,totalSessions){
 function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgramChange,trackerGoals,trackerLogs,meals,streak,totalSessions}){
   function nowT(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
   const sessionId=useRef(Date.now().toString());
-  const greeting={role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything!`,time:nowT()};
-
-  const [msgs,setMsgs]=useState([greeting]);
+  const makeGreeting=()=>({role:"ai",text:`Hey ${user?.name?.split(" ")[0]??"there"}! I'm your personal trainer. I know all your workout data. Ask me anything!`,time:nowT()});
+  const [msgs,setMsgs]=useState([makeGreeting()]);
   const sessions=chatSessions;
   const setSessions=onSessionsChange;
   const [view,setView]=useState("chat");
   const [viewingId,setViewingId]=useState(null);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
+  const [loadingPhase,setLoadingPhase]=useState(null);
   const bottomRef=useRef(null);
   const inputRef=useRef(null);
+
+  const newChat=()=>{sessionId.current=Date.now().toString();setMsgs([makeGreeting()]);setInput("");};
 
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
@@ -904,16 +906,16 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
     setMsgs(m=>m.map((x,i)=>i===msgIdx?{...x,proposal:{...x.proposal,status:"dismissed"}}:x));
   };
 
-  const send=async()=>{
-    if(!input.trim()||loading)return;
-    const text=input.trim(); setInput("");
+  const send=async(textOverride)=>{
+    const text=(textOverride??input).trim();
+    if(!text||loading)return;
+    if(!textOverride)setInput("");
     setMsgs(m=>[...m,{role:"user",text,time:nowT()}]); setLoading(true);
     const firstName=user?.name?.split(" ")[0]??"there";
     const apiBase=import.meta.env.VITE_API_URL??"";
 
     const callAPI=async(systemPrompt,messages,maxTokens=800)=>{
       const r=await fetch(`${apiBase}/api/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemPrompt,messages,maxTokens})});
-      if(!r.ok)throw new Error(`HTTP ${r.status}`);
       return r.json();
     };
 
@@ -942,30 +944,35 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
     };
 
     try{
-      // Pass 1: router — decide which data the answer needs
-      const routerPrompt=`Respond ONLY with valid JSON, no other text.
-Select which data to fetch for a gym coaching AI answering the user's message.
-Keys: "streak" (streak & session count), "program" (full workout plan), "history" (recent sessions), "progression" (exercise weights & personal bests), "tracker" (nutrition/health logs).
-Set "program_edit":true only if the user wants to change or update their workout program.
-Output exactly: {"needs":["key1","key2"],"program_edit":false}`;
+      // Route: keyword-based context selection (instant, no API call)
+      const t2=text.toLowerCase();
+      const isProgramEdit=/\b(change|update|modify|add|remove|replace|adjust|switch|restructure)\b.*(program|plan|workout|day|exercise|split)|program.*(change|update|edit)/.test(t2);
+      const needs=new Set();
+      if(isProgramEdit||/\b(program|plan|schedule|split|day|routine|exercise)\b/.test(t2)) needs.add("program");
+      if(/\b(streak|days|consistent|row|run|kept up)\b/.test(t2)) needs.add("streak");
+      if(/\b(history|last|recent|yesterday|session|did i|trained)\b/.test(t2)) needs.add("history");
+      if(/\b(progress|stronger|weight|heavier|pb|personal best|improve|lift|max)\b/.test(t2)) needs.add("progression");
+      if(/\b(eat|food|calorie|cal|nutrition|macro|protein|carb|fat|water|track|diet|meal)\b/.test(t2)) needs.add("tracker");
+      if(!needs.size){needs.add("streak");needs.add("history");}
+      if(isProgramEdit)needs.add("program");
+      const needsArr=[...needs];
 
-      let needs=["streak","history"];
-      let isProgramEdit=false;
-      try{
-        const rd=await callAPI(routerPrompt,[{role:"user",text}],100);
-        const raw=rd.reply??"";
-        const m=raw.match(/\{[\s\S]*\}/);
-        if(m){const p=JSON.parse(m[0]);if(Array.isArray(p.needs)&&p.needs.length)needs=p.needs;isProgramEdit=!!p.program_edit;}
-      }catch(e){console.warn("[router] failed, using defaults:",e);}
-      if(isProgramEdit&&!needs.includes("program"))needs.push("program");
+      // Gather only the routed data and get the answer
+      const ctx=needsArr.map(k=>dataBuilders[k]?.()).filter(Boolean).join("\n\n");
+      const programEditInstructions=isProgramEdit?`
 
-      // Pass 2: gather only the requested data and get the answer
-      const ctx=needs.map(k=>dataBuilders[k]?.()).filter(Boolean).join("\n\n");
-      const answerPrompt=`You are GRIND, a personal trainer AI for ${firstName}. Be direct, specific, and data-driven. **Bold** key numbers. Keep replies concise (3-5 sentences unless deep analysis is requested).
+IMPORTANT: This is a program modification request. You MUST respond in exactly this format and no other:
+1. Write exactly 1-2 sentences summarising what you changed.
+2. Immediately output the complete updated program as JSON inside the tags below. Do NOT write a list of exercises. Do NOT explain each change. Only the JSON inside the tags will actually update the user's program in the app.
 
-${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summarising what changed, then output:\n<PROGRAM_UPDATE>[complete JSON array, same structure as Program above, ALL days]</PROGRAM_UPDATE>":""}`;
+<PROGRAM_UPDATE>
+[paste the complete modified program JSON array here, preserving ALL days including rest days, with the same structure: id, label, isRest, exercises with id/name/sets/reps/weight]
+</PROGRAM_UPDATE>`:"";
+      const answerPrompt=`You are GRIND, a personal trainer AI for ${firstName}. Be direct, specific, and data-driven. **Bold** key numbers. Keep replies concise (3-5 sentences unless analysis is requested).${programEditInstructions}
 
-      const ad=await callAPI(answerPrompt,[...msgs.slice(1),{role:"user",text}],800);
+${ctx}`;
+
+      const ad=await callAPI(answerPrompt,[...msgs.slice(1),{role:"user",text}],1200);
       let reply=ad.reply??(ad.error?`Error: ${ad.error}`:"Connection error.");
       let proposalData=null;
       const match=reply.match(/<PROGRAM_UPDATE>([\s\S]*?)<\/PROGRAM_UPDATE>/);
@@ -982,7 +989,7 @@ ${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summaris
       console.error("[chat] error:",e);
       setMsgs(m=>[...m,{role:"ai",text:"Connection error. Please try again.",time:nowT()}]);
     }
-    setLoading(false);
+    setLoading(false); setLoadingPhase(null);
   };
 
   if(view==="history"){
@@ -991,7 +998,7 @@ ${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summaris
       <div className="chat-wrap">
         <div className="phdr" style={{display:"flex",alignItems:"center",gap:12}}>
           <button className="btn-ghost" onClick={()=>setView("chat")} style={{fontSize:22,lineHeight:1}}>←</button>
-          <h1>PAST CHATS</h1>
+          <h1>Past Chats</h1>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
           {past.length===0&&<p style={{color:"var(--muted)",textAlign:"center",marginTop:40}}>No past chats yet.</p>}
@@ -1012,10 +1019,17 @@ ${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summaris
       <div className="chat-wrap">
         <div className="phdr" style={{display:"flex",alignItems:"center",gap:12}}>
           <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:22,lineHeight:1}}>←</button>
-          <h1 style={{fontSize:18}}>{past?.title?.slice(0,28)??"Chat"}</h1>
+          <h1 style={{fontSize:20}}>{past?.title?.slice(0,30)??"Chat"}</h1>
         </div>
         <div className="chat-msgs">
-          {(past?.msgs??[]).map((m,i)=>(<div key={i} className={`msg ${m.role}`}><div className="bubble">{m.text}</div><div className="msg-time">{m.time}</div></div>))}
+          {(past?.msgs??[]).map((m,i)=>(
+            <div key={i} className={`msg ${m.role}`}>
+              {m.role==="ai"
+                ?<div className="msg-row"><div className="ai-avatar">AI</div><div><div className="bubble"><RenderMessage text={m.text}/></div><div className="msg-time">{m.time}</div></div></div>
+                :<><div className="bubble">{m.text}</div><div className="msg-time" style={{textAlign:"right"}}>{m.time}</div></>
+              }
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -1027,10 +1041,13 @@ ${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summaris
     <div className="chat-wrap">
       <div className="phdr" style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <h1>TRAINER</h1>
-          <p style={{fontSize:12,marginTop:2}}>Powered by AI • knows your full history</p>
+          <h1>Trainer</h1>
+          <p style={{fontSize:12,marginTop:2}}>AI-powered • knows your full history</p>
         </div>
-        <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:13}}>History</button>
+        <div style={{display:"flex",gap:8}}>
+          {msgs.some(m=>m.role==="user")&&<button className="btn-ghost" onClick={newChat} style={{fontSize:13}}>New chat</button>}
+          <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:13}}>History</button>
+        </div>
       </div>
 
       {!hasUserMsg?(
@@ -1060,7 +1077,7 @@ ${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summaris
           })()}
           <div className="quick-chips">
             {getSmartPrompts(history,streak,trackerLogs,totalSessions).map(q=>(
-              <button key={q} className="quick-chip" onClick={()=>{setInput(q);setTimeout(()=>inputRef.current?.focus(),0);}}>{q}</button>
+              <button key={q} className="quick-chip" onClick={()=>send(q)}>{q}</button>
             ))}
           </div>
         </div>
@@ -1100,7 +1117,7 @@ ${ctx}${isProgramEdit?"\n\nFor this program change: write 1-2 sentences summaris
                   </div>
                   {m.proposal.status==="pending"&&(
                     <div className="proposal-btns">
-                      <button className="proposal-accept" onClick={()=>acceptProposal(i)}>✓ APPLY CHANGES</button>
+                      <button className="proposal-accept" onClick={()=>acceptProposal(i)}>Apply changes</button>
                       <button className="proposal-dismiss" onClick={()=>dismissProposal(i)}>Dismiss</button>
                     </div>
                   )}
@@ -1684,8 +1701,9 @@ export default function App() {
     if(!user?.accessToken||user.demo){setDataLoaded(true);return;}
     const apiBase=import.meta.env.VITE_API_URL??"";
     fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load",accessToken:user.accessToken})})
-      .then(r=>r.json())
+      .then(r=>{if(r.status===401){console.warn("[db] session expired");return null;}return r.json();})
       .then(d=>{
+        if(!d){setDataLoaded(true);return;}
         if(d.program?.length) setProgram(d.program);
         if(d.history)         setHistory(d.history);
         if(d.chat_sessions)   setChatSessions(d.chat_sessions);
@@ -1709,7 +1727,9 @@ export default function App() {
     clearTimeout(saveTimer.current);
     saveTimer.current=setTimeout(()=>{
       const apiBase=import.meta.env.VITE_API_URL??"";
-      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled,tracker_goals:trackerGoals,tracker_logs:trackerLogs,meals})}).catch(console.error);
+      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled,tracker_goals:trackerGoals,tracker_logs:trackerLogs,meals})})
+        .then(r=>{if(r.status===401)console.warn("[db] save: session expired");})
+        .catch(console.error);
     },1500);
     return()=>clearTimeout(saveTimer.current);
   },[program,history,chatSessions,sheetId,restEnabled,trackerGoals,trackerLogs,meals,dataLoaded]);
