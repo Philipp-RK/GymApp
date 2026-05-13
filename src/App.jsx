@@ -394,10 +394,12 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .type-picker-badge{font-weight:700;font-size:13px;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .prog-day-actions{display:flex;gap:2px;align-items:center;}
 
-.rest-overlay{position:fixed;inset:0;background:rgba(17,17,17,.98);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;}
-.rest-lbl{font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px;}
-.rest-num{font-weight:800;font-size:96px;letter-spacing:-4px;line-height:1;}
-.rest-skip{margin-top:36px;padding:14px 40px;background:var(--s2);border:1px solid var(--border2);border-radius:var(--r);color:var(--muted2);font-size:15px;font-weight:600;letter-spacing:0;cursor:pointer;}
+.rest-overlay{position:fixed;inset:0;background:rgba(11,11,11,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;}
+.rest-close{position:absolute;top:20px;right:20px;width:40px;height:40px;background:var(--s2);border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted2);cursor:pointer;line-height:1;}
+.rest-lbl{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;}
+.rest-num{font-weight:800;font-size:108px;letter-spacing:-6px;line-height:1;}
+.rest-skip{margin-top:48px;padding:16px 48px;background:var(--s2);border:1px solid var(--border2);border-radius:32px;color:var(--muted2);font-size:15px;font-weight:600;letter-spacing:0;cursor:pointer;transition:all .15s;}
+.rest-skip:hover{color:var(--text);border-color:var(--muted2);}
 
 .note-wrap{padding:0 14px 12px;}
 .note-lbl{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:6px;}
@@ -520,10 +522,10 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .step-btn:hover{color:var(--text);}
 .trk-cal-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--muted2);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;}
 
-@keyframes slideInLeft{from{transform:translateX(-22%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-@keyframes slideInRight{from{transform:translateX(22%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-.tab-slide-left{animation:slideInLeft .2s cubic-bezier(.25,.46,.45,.94) both;}
-.tab-slide-right{animation:slideInRight .2s cubic-bezier(.25,.46,.45,.94) both;}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-6%);}to{opacity:1;transform:translateX(0);}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(6%);}to{opacity:1;transform:translateX(0);}}
+.tab-slide-left{animation:slideInLeft .18s cubic-bezier(.4,0,.2,1) both;}
+.tab-slide-right{animation:slideInRight .18s cubic-bezier(.4,0,.2,1) both;}
 
 .stats-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;flex-direction:column;max-width:430px;margin:0 auto;overflow:hidden;}
 .stats-chart-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
@@ -538,15 +540,33 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .incomplete-set{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
 .incomplete-set:last-of-type{border-bottom:none;}
 
-.edit-msg-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:3px 6px;border-radius:6px;font-size:11px;transition:all .15s;opacity:0;}
+.edit-msg-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;display:flex;align-items:center;transition:all .15s;opacity:0;}
 .msg.user:hover .edit-msg-btn{opacity:1;}
+.edit-msg-btn:hover{color:var(--muted2);background:rgba(255,255,255,.06);}
 .editing-bubble{background:var(--s2);border:1.5px solid var(--accent);border-radius:14px;padding:10px 12px;width:100%;}
 .editing-input{background:none;border:none;color:var(--text);font-size:14px;font-family:var(--db);width:100%;outline:none;resize:none;line-height:1.5;}
 .branch-badge{font-size:9px;font-weight:700;letter-spacing:.5px;background:rgba(var(--accent-rgb),.15);color:var(--accent2);border:1px solid rgba(var(--accent-rgb),.3);border-radius:10px;padding:2px 7px;margin-left:6px;vertical-align:middle;}
 
 .nutri-goal-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
 .nutri-goal-row:last-child{border-bottom:none;}
+
+.prog-day-card-today{border-width:2px!important;position:relative;}
+.prog-day-card-today::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:var(--r) 0 0 var(--r);}
+
+.hist-section-toggle{display:flex;background:var(--s2);border-radius:10px;padding:3px;margin-bottom:14px;}
+.hist-section-btn{flex:1;padding:8px;border:none;border-radius:8px;font-family:var(--db);font-size:13px;font-weight:600;cursor:pointer;color:var(--muted2);background:none;transition:all .15s;}
+.hist-section-btn.on{background:var(--s1);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+
+.stats-pills-scroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:10px;}
+.stats-pills-scroll::-webkit-scrollbar{display:none;}
+
+.past-chat-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
+
+.hist-card-inner{position:relative;padding-right:40px;}
+.hist-card-del{position:absolute;top:50%;right:-2px;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;opacity:0;transition:opacity .15s;}
+.hist-card:hover .hist-card-del{opacity:1;}
 `;
+
 
 
 const Ic = {
@@ -790,6 +810,92 @@ function BarChart({data,color="#FF4D1C",height=60}){
       </g>
     );})}
   </svg>);
+}
+
+function InlineStats({history,program,trackerGoals,trackerLogs}){
+  const [selEx,setSelEx]=useState(null);
+  const exercises=program.flatMap(d=>d.exercises||[]);
+  const exOptions=exercises.filter(ex=>history.some(h=>h.exercises?.find(e=>e.id===ex.id)));
+
+  const weeklyData=(()=>{
+    const weeks=[];
+    for(let w=11;w>=0;w--){
+      const wStart=new Date();wStart.setDate(wStart.getDate()-wStart.getDay()-w*7);wStart.setHours(0,0,0,0);
+      const wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+7);
+      const count=history.filter(h=>{const d=new Date(h.date);return d>=wStart&&d<wEnd&&!program.find(p=>p.id===h.dayKey)?.isRest;}).length;
+      const label=wStart.toLocaleDateString("en",{month:"short",day:"numeric"}).slice(0,3);
+      weeks.push({v:count,label:w===0?"Now":label,today:w===0});
+    }
+    return weeks;
+  })();
+
+  const volumeData=history.slice(-20).filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).map(h=>
+    h.exercises?.reduce((s,ex)=>s+(ex.sets?.reduce((ss,st)=>ss+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0)||0),0)||0
+  );
+
+  const exData=selEx?(()=>{
+    const sessions=history.filter(h=>h.exercises?.find(e=>e.id===selEx.id));
+    return sessions.slice(-16).map(h=>{const ex=h.exercises?.find(e=>e.id===selEx.id);return Math.max(0,...(ex?.sets?.map(s=>parseFloat(s.weight)||0)||[]));});
+  })():null;
+
+  const bodyWeightData=(()=>{
+    const bwGoal=trackerGoals?.find(g=>g.id==="weight");
+    if(!bwGoal) return null;
+    const pts=trackerLogs?.slice(-20).map(l=>parseFloat(l.entries?.[bwGoal.id])||null).filter(Boolean)||[];
+    return pts.length>=2?pts:null;
+  })();
+
+  const totalSessions=history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).length;
+  const totalVolume=Math.round(history.reduce((s,h)=>s+(h.exercises?.reduce((ss,ex)=>ss+(ex.sets?.reduce((sss,st)=>sss+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0)||0),0)||0),0));
+  const avgDur=totalSessions?Math.round(history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).reduce((s,h)=>s+(h.duration||0),0)/totalSessions):0;
+
+  return(<div>
+    <div className="stats-row">
+      <div className="stat-card"><div className="stat-lbl">Workouts</div><div className="stat-num">{totalSessions}</div></div>
+      <div className="stat-card"><div className="stat-lbl">Avg Duration</div><div className="stat-num" style={{fontSize:22}}>{avgDur}min</div></div>
+      <div className="stat-card"><div className="stat-lbl">Total Volume</div><div className="stat-num" style={{fontSize:20}}>{totalVolume>999?`${(totalVolume/1000).toFixed(1)}t`:`${totalVolume}kg`}</div></div>
+    </div>
+    <div className="stats-chart-card">
+      <div className="ctitle">WEEKLY — LAST 12 WEEKS</div>
+      <BarChart data={weeklyData} color="var(--accent)" height={80}/>
+    </div>
+    {volumeData.length>=2&&<div className="stats-chart-card">
+      <div className="ctitle">VOLUME PER SESSION</div>
+      <MiniLineChart data={volumeData} color="var(--accent)" height={70}/>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:"var(--muted)"}}>
+        <span>{Math.round(Math.min(...volumeData))}kg</span><span>{Math.round(Math.max(...volumeData))}kg peak</span>
+      </div>
+    </div>}
+    {bodyWeightData&&<div className="stats-chart-card">
+      <div className="ctitle">BODY WEIGHT TREND</div>
+      <MiniLineChart data={bodyWeightData} color="#C77DFF" height={65}/>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:"var(--muted)"}}>
+        <span>{Math.min(...bodyWeightData)}kg</span><span>{Math.max(...bodyWeightData)}kg</span>
+      </div>
+    </div>}
+    <div className="stats-chart-card">
+      <div className="ctitle" style={{marginBottom:8}}>EXERCISE PROGRESSION</div>
+      {exOptions.length===0&&<p style={{color:"var(--muted)",fontSize:13}}>Complete workouts to see charts.</p>}
+      {exOptions.length>0&&<>
+        <div className="stats-pills-scroll">
+          {exOptions.map(ex=>(
+            <button key={ex.id} className={`stats-ex-pill${selEx?.id===ex.id?" on":""}`} onClick={()=>setSelEx(ex.id===selEx?.id?null:ex)}>{ex.name}</button>
+          ))}
+        </div>
+        {selEx&&exData&&exData.length>=2&&<>
+          <div style={{fontSize:12,color:"var(--muted2)",marginBottom:6}}>{selEx.name} — top weight (kg)</div>
+          <MiniLineChart data={exData} color={program.find(d=>d.exercises?.find(e=>e.id===selEx.id))?.color||"var(--accent)"} height={90}/>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--muted)"}}>
+            <span>Start: {Math.min(...exData)}kg</span>
+            <span>Best: {Math.max(...exData)}kg</span>
+            <span style={{color:"var(--accent2)",fontWeight:700}}>+{(Math.max(...exData)-Math.min(...exData)).toFixed(1)}kg</span>
+          </div>
+        </>}
+        {selEx&&exData&&exData.length<2&&<p style={{color:"var(--muted)",fontSize:13,marginTop:8}}>Need 2+ sessions with {selEx.name}.</p>}
+        {!selEx&&<p style={{color:"var(--muted)",fontSize:13}}>Tap an exercise to see its progression.</p>}
+      </>}
+    </div>
+  </div>);
 }
 
 function StatsScreen({history,program,trackerGoals,trackerLogs,onClose}){
@@ -1109,6 +1215,7 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   const [loadingPhase,setLoadingPhase]=useState(null);
   const [editingIdx,setEditingIdx]=useState(null);
   const [editingText,setEditingText]=useState("");
+  const [pastInput,setPastInput]=useState("");
   const bottomRef=useRef(null);
   const inputRef=useRef(null);
 
@@ -1137,7 +1244,7 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
     if(!newText){setEditingIdx(null);return;}
     const msgsUpToEdit=msgs.slice(0,idx);
     const branchId=Date.now().toString();
-    const oldSession={id:sessionId.current,date:new Date().toISOString(),title:msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat",msgs};
+    const oldSession={id:sessionId.current,date:new Date().toISOString(),title:msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat",msgs,nextId:branchId};
     setSessions(prev=>[oldSession,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
     sessionId.current=branchId;
     setEditingIdx(null);
@@ -1252,12 +1359,10 @@ ${ctx}`;
         <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
           {past.length===0&&<p style={{color:"var(--muted)",textAlign:"center",marginTop:40}}>No past chats yet.</p>}
           {past.map(s=>(
-            <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-              <div className="card" style={{flex:1,cursor:"pointer",marginBottom:0,padding:"12px 14px"}} onClick={()=>{setViewingId(s.id);setView("past");}}>
-                <div style={{fontWeight:600,fontSize:14,marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
-                <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(s.date).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric"})}</div>
-              </div>
-              <button onClick={()=>deleteSession(s.id)} className="btn-icon" style={{flexShrink:0,width:38,height:38,background:"var(--s2)",border:"1px solid var(--border)"}}><Ic.Trash/></button>
+            <div key={s.id} className="card" style={{cursor:"pointer",marginBottom:10,padding:"12px 14px",position:"relative"}} onClick={()=>{setViewingId(s.id);setPastInput("");setView("past");}}>
+              <div style={{fontWeight:600,fontSize:14,marginBottom:3,paddingRight:32,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
+              <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(s.date).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric"})}</div>
+              <button onClick={e=>{e.stopPropagation();deleteSession(s.id);}} style={{position:"absolute",top:"50%",right:12,transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted)",cursor:"pointer",padding:4,borderRadius:6,opacity:.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.6}><Ic.Trash/></button>
             </div>
           ))}
         </div>
@@ -1267,6 +1372,15 @@ ${ctx}`;
 
   if(view==="past"){
     const past=sessions.find(s=>s.id===viewingId);
+    const prevSession=sessions.find(s=>s.nextId===viewingId);
+    const nextSession=past?.nextId?sessions.find(s=>s.id===past.nextId):null;
+    const sendFromPast=()=>{
+      const text=pastInput.trim();
+      if(!text||!past)return;
+      setPastInput("");
+      continueSession(past);
+      send(text,past.msgs);
+    };
     return(
       <div className="chat-wrap">
         <div className="phdr" style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1275,6 +1389,12 @@ ${ctx}`;
             <h1 style={{fontSize:18,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{past?.title?.slice(0,40)??"Chat"}</h1>
             {past?.date&&<p style={{fontSize:11,marginTop:1}}>{new Date(past.date).toLocaleDateString([],{weekday:"long",month:"short",day:"numeric"})}</p>}
           </div>
+          {(prevSession||nextSession)&&(
+            <div style={{display:"flex",gap:4,flexShrink:0}}>
+              <button onClick={()=>prevSession&&setViewingId(prevSession.id)} style={{background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,width:30,height:30,cursor:prevSession?"pointer":"default",color:prevSession?"var(--muted2)":"var(--border2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>‹</button>
+              <button onClick={()=>nextSession&&setViewingId(nextSession.id)} style={{background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,width:30,height:30,cursor:nextSession?"pointer":"default",color:nextSession?"var(--muted2)":"var(--border2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>›</button>
+            </div>
+          )}
         </div>
         <div className="chat-msgs" style={{flex:1}}>
           {(past?.msgs??[]).map((m,i)=>(
@@ -1286,8 +1406,9 @@ ${ctx}`;
             </div>
           ))}
         </div>
-        <div style={{padding:"12px 14px",borderTop:"1px solid var(--border)",flexShrink:0}}>
-          <button className="btn-accent" style={{fontSize:14,padding:13}} onClick={()=>continueSession(past)}>Continue this chat</button>
+        <div className="past-chat-bar">
+          <input className="chat-in" type="text" value={pastInput} onChange={e=>setPastInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendFromPast()} placeholder="Continue this chat..." autoComplete="off" autoCorrect="off" spellCheck="false"/>
+          <button className="send-btn" onClick={sendFromPast}><Ic.Send/></button>
         </div>
       </div>
     );
@@ -1366,7 +1487,7 @@ ${ctx}`;
                   ):(
                     <>
                       <div style={{display:"flex",alignItems:"flex-end",gap:6,justifyContent:"flex-end"}}>
-                        {!loading&&<button className="edit-msg-btn" onClick={()=>{setEditingIdx(i);setEditingText(m.text);}}>Edit</button>}
+                        {!loading&&<button className="edit-msg-btn" onClick={()=>{setEditingIdx(i);setEditingText(m.text);}}><Ic.Edit/></button>}
                         <div className="bubble">{m.text}{m.branched&&<span className="branch-badge">edited</span>}</div>
                       </div>
                       <div className="msg-time" style={{textAlign:"right"}}>{m.time}</div>
@@ -1931,26 +2052,26 @@ function TrackerTab({ goals, setGoals, logs, setLogs, meals, setMeals, onOpenCal
           </>);
         })()}
       </div>
-    </div>
 
-    {/* ── NUTRITION GOALS ── */}
-    <div className="card" style={{marginBottom:12}}>
-      <div className="section-header"><div className="ctitle" style={{marginBottom:0}}>NUTRITION GOALS</div></div>
-      {[{id:"calories",label:"Calories",unit:"kcal",color:"#7c3aed"},{id:"protein",label:"Protein",unit:"g",color:"#4ECDC4"},{id:"carbs",label:"Carbs",unit:"g",color:"#FFD166"},{id:"fat",label:"Fat",unit:"g",color:"#f59e0b"}].map(({id,label,unit,color})=>{
-        const g=goals.find(x=>x.id===id);
-        const val=g?.target??"";
-        return(<div key={id} className="nutri-goal-row">
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <div style={{width:8,height:8,borderRadius:"50%",background:color,flexShrink:0}}/>
-            <div style={{fontWeight:500,fontSize:14}}>{label}</div>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <input type="number" value={val} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))setGoals(gs=>gs.map(x=>x.id===id?{...x,target:v}:x));}}
-              style={{width:72,background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:14,padding:"5px 8px",textAlign:"right",outline:"none",fontFamily:"var(--db)"}}/>
-            <span style={{fontSize:12,color:"var(--muted2)",width:30}}>{unit}</span>
-          </div>
-        </div>);
-      })}
+      {/* ── NUTRITION GOALS ── */}
+      <div className="card" style={{marginBottom:12}}>
+        <div className="section-header"><div className="ctitle" style={{marginBottom:0}}>NUTRITION GOALS</div></div>
+        {[{id:"calories",label:"Calories",unit:"kcal",color:"#7c3aed"},{id:"protein",label:"Protein",unit:"g",color:"#4ECDC4"},{id:"carbs",label:"Carbs",unit:"g",color:"#FFD166"},{id:"fat",label:"Fat",unit:"g",color:"#f59e0b"}].map(({id,label,unit,color})=>{
+          const g=goals.find(x=>x.id===id);
+          const val=g?.target??"";
+          return(<div key={id} className="nutri-goal-row">
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:color,flexShrink:0}}/>
+              <div style={{fontWeight:500,fontSize:14}}>{label}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <input type="number" value={val} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))setGoals(gs=>gs.map(x=>x.id===id?{...x,target:v}:x));}}
+                style={{width:72,background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:14,padding:"5px 8px",textAlign:"right",outline:"none",fontFamily:"var(--db)"}}/>
+              <span style={{fontSize:12,color:"var(--muted2)",width:30}}>{unit}</span>
+            </div>
+          </div>);
+        })}
+      </div>
     </div>
   </>);
 }
@@ -1994,14 +2115,21 @@ export default function App() {
   const [activeWorkout, setActiveWorkout]= useState(null);
   const [restTimer,     setRestTimer]    = useState(null);
   const [restMinimized, setRestMinimized]= useState(false);
-  const [showStats,     setShowStats]    = useState(false);
+  const [homeSection,   setHomeSection]  = useState("history");
   const [editingDay,    setEditingDay]   = useState(null);
   const [histDetail,    setHistDetail]   = useState(null);
   const restRef        = useRef(null);
   const saveTimer      = useRef(null);
   const tokenExpired   = useRef(false);
+  const todayCardRef   = useRef(null);
 
   useEffect(()=>{if(user)ls.set("gr_user",user);},[user]);
+
+  useEffect(()=>{
+    if(tab==="workout"&&todayCardRef.current){
+      setTimeout(()=>todayCardRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
+    }
+  },[tab]);
 
   // Load all data from Supabase on login
   useEffect(()=>{
@@ -2136,26 +2264,27 @@ export default function App() {
 
   if(!dataLoaded) return(<><style>{CSS}</style><div className="login"><div className="login-logo">GRIND</div><p style={{color:"var(--muted)"}}>Loading your data...</p></div></>);
 
-  if(activeWorkout) return(<><style>{CSS}</style><div className="app">
-    <WorkoutSession workout={activeWorkout} history={history} onFinish={handleFinish} onBack={()=>setActiveWorkout(null)} startRest={startRest} restEnabled={restEnabled}/>
+  const RestTimerUI=()=>(<>
     {restTimer!==null&&!restMinimized&&(
       <div className="rest-overlay">
+        <button className="rest-close" onClick={()=>setRestMinimized(true)}>×</button>
         <div className="rest-lbl">REST</div>
         <div className="rest-num" style={{color:restTimer<=10?"var(--accent)":"var(--text)"}}>{restTimer}</div>
-        <div style={{display:"flex",gap:12,marginTop:36}}>
-          <button className="rest-skip" style={{padding:"14px 24px",fontSize:14}} onClick={()=>setRestMinimized(true)}>Minimize</button>
-          <button className="rest-skip" style={{padding:"14px 24px",fontSize:14}} onClick={()=>{clearInterval(restRef.current);setRestTimer(null);}}>Skip</button>
-        </div>
+        <button className="rest-skip" onClick={()=>{clearInterval(restRef.current);setRestTimer(null);}}>Skip rest</button>
       </div>
     )}
     {restTimer!==null&&restMinimized&&(
       <div className="rest-pill" onClick={()=>setRestMinimized(false)}>
         <Ic.Clock/>
         <span className="rest-pill-num">{restTimer}s</span>
-        <span style={{fontSize:11,color:"var(--muted2)"}}>tap to expand</span>
-        <button onClick={e=>{e.stopPropagation();clearInterval(restRef.current);setRestTimer(null);}} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:16,lineHeight:1,marginLeft:4,padding:2}}>×</button>
+        <button onClick={e=>{e.stopPropagation();clearInterval(restRef.current);setRestTimer(null);}} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:18,lineHeight:1,padding:"0 2px"}}>×</button>
       </div>
     )}
+  </>);
+
+  if(activeWorkout) return(<><style>{CSS}</style><div className="app">
+    <WorkoutSession workout={activeWorkout} history={history} onFinish={handleFinish} onBack={()=>setActiveWorkout(null)} startRest={startRest} restEnabled={restEnabled}/>
+    <RestTimerUI/>
   </div></>);
 
   if(histDetail) return(<><style>{CSS}</style><div className="app">
@@ -2164,7 +2293,7 @@ export default function App() {
 
   return(<><style>{CSS}</style>{themeCSS&&<style>{themeCSS}</style>}<div className="app" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
-    {showStats&&<StatsScreen history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs} onClose={()=>setShowStats(false)}/>}
+    <RestTimerUI/>
     {calMode&&<BigCalendar mode={calMode} program={program} history={history} startDate={ls.get("gr_start",null)} trackerGoals={trackerGoals} trackerLogs={trackerLogs} onClose={()=>setCalMode(null)} onSessionClick={s=>{setCalMode(null);setHistDetail(s);}}/>}
     <div key={tab} className={tabAnim?`tab-slide-${tabAnim}`:""} style={{flex:1,display:"flex",flexDirection:"column",minHeight:0,overflow:"hidden"}}>
 
@@ -2174,7 +2303,7 @@ export default function App() {
       const todayStr=new Date().toISOString().slice(0,10);
       const doneToday=history.some(h=>h.date===todayStr&&h.dayKey===todayDay.id&&!todayDay.isRest);
       return(<>
-      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="btn-icon" onClick={()=>setShowStats(true)} style={{width:38,height:38,background:"var(--s2)",border:"1px solid var(--border2)"}}><Ic.Stats/></button><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
+      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>
@@ -2261,27 +2390,32 @@ export default function App() {
           })()}
         </div>
         <MiniCalendar program={program} history={history} todayIdx={todayIdx} startDate={ls.get("gr_start",null)} onExpand={()=>setCalMode("workout")}/>
-        <div className="card">
-          <div className="ctitle" style={{fontSize:14,marginBottom:history.length===0?0:10}}>WORKOUT HISTORY</div>
-          {history.length===0
-            ? <p style={{fontSize:13,color:"var(--muted)"}}>No sessions logged yet.</p>
-            : [...history].reverse().map((s,i)=>{
-                const day=program.find(d=>d.id===s.dayKey);
-                return(
-                  <div key={i} className="hist-card" onClick={()=>setHistDetail(s)} style={{margin:"0 0 8px",padding:"10px 12px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div>
-                        <div style={{fontWeight:600,fontSize:13,color:day?.color}}>{day?.label??s.dayKey}</div>
-                        <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>
-                          {new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} &bull; {s.duration}min{s.exercises?.length?` · ${s.exercises.length} ex`:""}
+        <div>
+          <div className="hist-section-toggle">
+            <button className={`hist-section-btn${homeSection==="history"?" on":""}`} onClick={()=>setHomeSection("history")}>History</button>
+            <button className={`hist-section-btn${homeSection==="stats"?" on":""}`} onClick={()=>setHomeSection("stats")}>Statistics</button>
+          </div>
+          {homeSection==="history"&&(
+            history.length===0
+              ? <p style={{fontSize:13,color:"var(--muted)",textAlign:"center",padding:"20px 0"}}>No sessions logged yet.</p>
+              : [...history].reverse().map((s,i)=>{
+                  const day=program.find(d=>d.id===s.dayKey);
+                  return(
+                    <div key={i} className="hist-card" onClick={()=>setHistDetail(s)} style={{margin:"0 0 8px",padding:"10px 12px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div>
+                          <div style={{fontWeight:600,fontSize:13,color:day?.color}}>{day?.label??s.dayKey}</div>
+                          <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>
+                            {new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} &bull; {s.duration}min{s.exercises?.length?` · ${s.exercises.length} ex`:""}
+                          </div>
                         </div>
+                        <div style={{fontSize:14,color:"var(--muted)"}}>&#8250;</div>
                       </div>
-                      <div style={{fontSize:14,color:"var(--muted)"}}>&#8250;</div>
                     </div>
-                  </div>
-                );
-              })
-          }
+                  );
+                })
+          )}
+          {homeSection==="stats"&&<InlineStats history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs}/>}
         </div>
       </div>
     </>);
@@ -2298,7 +2432,7 @@ export default function App() {
           const estMins=day.exercises.length?Math.round(totalSets*2.2+totalSets*avgRest/60):0;
           const lastDone=[...history].reverse().find(h=>h.dayKey===day.id);
           const lastDoneLabel=lastDone?new Date(lastDone.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):null;
-          return(<div key={day.id} className="prog-day-card" style={{borderColor:isT?day.color:undefined}}
+          return(<div key={day.id} ref={isT?todayCardRef:undefined} className={`prog-day-card${isT?" prog-day-card-today":""}`} style={{borderColor:isT?day.color:undefined,background:isT?`${day.color}0c`:undefined}}
             draggable onDragStart={e=>onDragStart(e,i)} onDragEnter={e=>onDragEnter(e,i)} onDragOver={onDragOver} onDrop={e=>onDrop(e,i)} onDragEnd={onDragEnd}>
             <div className="prog-day-header">
               <div className="drag-handle"><Ic.Grip/></div>
