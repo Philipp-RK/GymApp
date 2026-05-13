@@ -319,7 +319,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--db);-webkit-tap-hi
 input[type=number]{-moz-appearance:textfield;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
-.app{max-width:430px;margin:0 auto;min-height:100svh;display:flex;flex-direction:column;}
+.app{max-width:430px;margin:0 auto;height:100svh;display:flex;flex-direction:column;overflow:hidden;}
 
 .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(17,17,17,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,6px);}
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 6px;background:none;border:none;cursor:pointer;color:var(--muted2);font-family:var(--db);font-size:9px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;transition:color .15s;position:relative;}
@@ -488,7 +488,7 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 
 .ai-avatar{width:26px;height:26px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;letter-spacing:0;color:var(--muted2);flex-shrink:0;margin-bottom:auto;margin-top:2px;}
 .msg-row{display:flex;gap:8px;align-items:flex-start;}
-.msg.ai .bubble strong{color:var(--accent2);}
+.msg.ai .bubble strong{color:var(--text);}
 .msg.ai .bubble ul,.msg.ai .bubble ol{padding-left:16px;margin:4px 0;}
 
 .proposal-card{background:var(--s2);border:1px solid var(--border2);border-radius:14px;padding:14px;max-width:92%;align-self:flex-start;margin-top:4px;}
@@ -519,7 +519,35 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .step-btn{width:30px;height:30px;border-radius:8px;background:var(--s2);border:1px solid var(--border2);color:var(--muted2);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;flex-shrink:0;transition:all .15s;}
 .step-btn:hover{color:var(--text);}
 .trk-cal-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--muted2);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;}
+
+@keyframes slideInLeft{from{transform:translateX(-22%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes slideInRight{from{transform:translateX(22%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.tab-slide-left{animation:slideInLeft .2s cubic-bezier(.25,.46,.45,.94) both;}
+.tab-slide-right{animation:slideInRight .2s cubic-bezier(.25,.46,.45,.94) both;}
+
+.stats-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;flex-direction:column;max-width:430px;margin:0 auto;overflow:hidden;}
+.stats-chart-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.stats-ex-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--s2);color:var(--muted2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.stats-ex-pill.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+.rest-pill{position:fixed;bottom:72px;right:16px;background:var(--s1);border:1.5px solid var(--accent);border-radius:28px;padding:10px 18px;display:flex;align-items:center;gap:10px;z-index:150;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.7);animation:slideInRight .2s both;}
+.rest-pill-num{font-weight:800;font-size:22px;letter-spacing:-0.5px;color:var(--accent);}
+
+.finish-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:350;display:flex;align-items:flex-end;justify-content:center;}
+.finish-modal{background:var(--s1);border-radius:24px 24px 0 0;border-top:1px solid var(--border2);padding:22px 22px 32px;width:100%;max-width:430px;max-height:85svh;overflow-y:auto;}
+.incomplete-set{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.incomplete-set:last-of-type{border-bottom:none;}
+
+.edit-msg-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:3px 6px;border-radius:6px;font-size:11px;transition:all .15s;opacity:0;}
+.msg.user:hover .edit-msg-btn{opacity:1;}
+.editing-bubble{background:var(--s2);border:1.5px solid var(--accent);border-radius:14px;padding:10px 12px;width:100%;}
+.editing-input{background:none;border:none;color:var(--text);font-size:14px;font-family:var(--db);width:100%;outline:none;resize:none;line-height:1.5;}
+.branch-badge{font-size:9px;font-weight:700;letter-spacing:.5px;background:rgba(var(--accent-rgb),.15);color:var(--accent2);border:1px solid rgba(var(--accent-rgb),.3);border-radius:10px;padding:2px 7px;margin-left:6px;vertical-align:middle;}
+
+.nutri-goal-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.nutri-goal-row:last-child{border-bottom:none;}
 `;
+
 
 const Ic = {
   Home:     ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>,
@@ -536,6 +564,9 @@ const Ic = {
   Plus:     ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   Google:   ()=><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>,
   Target:   ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>,
+  Stats:    ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  Bell:     ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  Minimize: ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
 };
 
 function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChange, onRepsChange, onRestChange, onFieldBlur, onSkip, onRemoveSet, onCheck, onAddSet }) {
@@ -707,6 +738,166 @@ function WorkoutStats({exStates, elapsed, fmtTime}) {
   );
 }
 
+function playRestEndSound(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    [[880,0],[1046,0.18],[1318,0.36]].forEach(([freq,delay])=>{
+      const osc=ctx.createOscillator();const gain=ctx.createGain();
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.type="sine";osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0.28,ctx.currentTime+delay);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.28);
+      osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+0.28);
+    });
+  }catch{}
+}
+function sendRestNotification(){
+  if(Notification?.permission==="granted"){
+    new Notification("Rest done! 💪",{body:"Time to get back to work.",silent:true});
+  }
+}
+function requestNotificationPermission(){
+  if(typeof Notification!=="undefined"&&Notification.permission==="default"){
+    Notification.requestPermission().catch(()=>{});
+  }
+}
+
+function MiniLineChart({data,color="#FF4D1C",height=60}){
+  if(!data||data.length<2) return <div style={{height,display:"flex",alignItems:"center",justifyContent:"center",color:"var(--muted)",fontSize:12}}>Not enough data</div>;
+  const min=Math.min(...data),max=Math.max(...data);
+  const range=max-min||1;
+  const W=300,H=height;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*W},${H-(((v-min)/range)*(H-10)+5)}`).join(" ");
+  const area=`M ${pts.split(" ").join(" L ")} L ${W},${H} L 0,${H} Z`;
+  return(<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="none">
+    <defs><linearGradient id={`g${color.slice(1)}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.25"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
+    <path d={area} fill={`url(#g${color.slice(1)})`}/>
+    <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+    {data.map((v,i)=>{const x=(i/(data.length-1))*W;const y=H-(((v-min)/range)*(H-10)+5);return <circle key={i} cx={x} cy={y} r="3" fill={color} stroke="var(--s1)" strokeWidth="1.5"/>;  })}
+  </svg>);
+}
+
+function BarChart({data,color="#FF4D1C",height=60}){
+  if(!data||data.length===0) return null;
+  const max=Math.max(...data.map(d=>d.v),1);
+  const W=300,H=height;
+  const bw=Math.floor(W/data.length)-2;
+  return(<svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height}} preserveAspectRatio="none">
+    {data.map((d,i)=>{const bh=Math.max(2,(d.v/max)*(H-16));const x=i*(W/data.length);const isToday=d.today;return(
+      <g key={i}>
+        <rect x={x+1} y={H-bh-16} width={bw} height={bh} rx="3" fill={isToday?color:`${color}66`}/>
+        <text x={x+bw/2+1} y={H-4} textAnchor="middle" fontSize="8" fill="var(--muted)" fontFamily="sans-serif">{d.label}</text>
+      </g>
+    );})}
+  </svg>);
+}
+
+function StatsScreen({history,program,trackerGoals,trackerLogs,onClose}){
+  const [selEx,setSelEx]=useState(null);
+  const exercises=program.flatMap(d=>d.exercises||[]);
+  const exOptions=exercises.filter(ex=>history.some(h=>h.exercises?.find(e=>e.id===ex.id)));
+  const startDate=ls.get("gr_start",null);
+
+  const weeklyData=(()=>{
+    const weeks=[];
+    for(let w=11;w>=0;w--){
+      const wStart=new Date();wStart.setDate(wStart.getDate()-wStart.getDay()-w*7);wStart.setHours(0,0,0,0);
+      const wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+7);
+      const count=history.filter(h=>{const d=new Date(h.date);return d>=wStart&&d<wEnd&&!program.find(p=>p.id===h.dayKey)?.isRest;}).length;
+      const isThisWeek=w===0;
+      const label=wStart.toLocaleDateString("en",{month:"short",day:"numeric"}).slice(0,3);
+      weeks.push({v:count,label:w===0?"Now":label,today:isThisWeek});
+    }
+    return weeks;
+  })();
+
+  const volumeData=(()=>{
+    return history.slice(-20).filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).map(h=>{
+      const vol=h.exercises?.reduce((s,ex)=>s+(ex.sets?.reduce((ss,st)=>ss+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0)||0),0)||0;
+      return vol;
+    });
+  })();
+
+  const exData=selEx?(()=>{
+    const sessions=history.filter(h=>h.exercises?.find(e=>e.id===selEx.id));
+    return sessions.slice(-16).map(h=>{
+      const ex=h.exercises?.find(e=>e.id===selEx.id);
+      const maxW=Math.max(0,...(ex?.sets?.map(s=>parseFloat(s.weight)||0)||[]));
+      return maxW;
+    });
+  })():null;
+
+  const totalSessions=history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).length;
+  const totalVolume=Math.round(history.reduce((s,h)=>s+(h.exercises?.reduce((ss,ex)=>ss+(ex.sets?.reduce((sss,st)=>sss+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0)||0),0)||0),0));
+  const avgDur=totalSessions?Math.round(history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).reduce((s,h)=>s+(h.duration||0),0)/totalSessions):0;
+
+  const bodyWeightData=(()=>{
+    const bwGoal=trackerGoals?.find(g=>g.id==="weight");
+    if(!bwGoal) return null;
+    const pts=trackerLogs?.slice(-20).map(l=>parseFloat(l.entries?.[bwGoal.id])||null).filter(Boolean)||[];
+    return pts.length>=2?pts:null;
+  })();
+
+  return(<div className="stats-overlay">
+    <div className="phdr" style={{display:"flex",alignItems:"center",gap:12}}>
+      <button className="btn-ghost" onClick={onClose} style={{fontSize:22,lineHeight:1}}>←</button>
+      <h1>Statistics</h1>
+    </div>
+    <div className="scroll">
+      <div className="stats-row">
+        <div className="stat-card"><div className="stat-lbl">Workouts</div><div className="stat-num">{totalSessions}</div></div>
+        <div className="stat-card"><div className="stat-lbl">Avg Duration</div><div className="stat-num" style={{fontSize:22}}>{avgDur}min</div></div>
+        <div className="stat-card"><div className="stat-lbl">Total Volume</div><div className="stat-num" style={{fontSize:20}}>{totalVolume>999?`${(totalVolume/1000).toFixed(1)}t`:`${totalVolume}kg`}</div></div>
+      </div>
+
+      <div className="stats-chart-card">
+        <div className="ctitle">WEEKLY WORKOUTS — LAST 12 WEEKS</div>
+        <BarChart data={weeklyData} color="var(--accent)" height={80}/>
+      </div>
+
+      {volumeData.length>=2&&<div className="stats-chart-card">
+        <div className="ctitle">VOLUME PER SESSION — LAST {volumeData.length} SESSIONS</div>
+        <MiniLineChart data={volumeData} color="var(--accent)" height={80}/>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--muted)"}}>
+          <span>{Math.round(Math.min(...volumeData))}kg</span>
+          <span>{Math.round(Math.max(...volumeData))}kg peak</span>
+        </div>
+      </div>}
+
+      {bodyWeightData&&<div className="stats-chart-card">
+        <div className="ctitle">BODY WEIGHT TREND</div>
+        <MiniLineChart data={bodyWeightData} color="#C77DFF" height={70}/>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--muted)"}}>
+          <span>{Math.min(...bodyWeightData)}kg</span><span>{Math.max(...bodyWeightData)}kg</span>
+        </div>
+      </div>}
+
+      <div className="stats-chart-card">
+        <div className="ctitle" style={{marginBottom:10}}>EXERCISE PROGRESSION</div>
+        {exOptions.length===0&&<p style={{color:"var(--muted)",fontSize:13}}>Complete some workouts to see progression charts.</p>}
+        {exOptions.length>0&&<>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+            {exOptions.map(ex=>(
+              <button key={ex.id} className={`stats-ex-pill ${selEx?.id===ex.id?"on":""}`} onClick={()=>setSelEx(ex.id===selEx?.id?null:ex)}>{ex.name}</button>
+            ))}
+          </div>
+          {selEx&&exData&&exData.length>=2&&<>
+            <div style={{fontSize:12,color:"var(--muted2)",marginBottom:6}}>{selEx.name} — top weight per session (kg)</div>
+            <MiniLineChart data={exData} color={program.find(d=>d.exercises?.find(e=>e.id===selEx.id))?.color||"var(--accent)"} height={90}/>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--muted)"}}>
+              <span>Start: {Math.min(...exData)}kg</span>
+              <span>Best: {Math.max(...exData)}kg</span>
+              <span style={{color:"var(--accent2)",fontWeight:700}}>+{(Math.max(...exData)-Math.min(...exData)).toFixed(1)}kg</span>
+            </div>
+          </>}
+          {selEx&&exData&&exData.length<2&&<p style={{color:"var(--muted)",fontSize:13,marginTop:8}}>Need at least 2 sessions with {selEx.name} to show a chart.</p>}
+          {!selEx&&<p style={{color:"var(--muted)",fontSize:13}}>Tap an exercise above to see its weight progression.</p>}
+        </>}
+      </div>
+    </div>
+  </div>);
+}
+
 function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled}){
   const startTime=useRef(Date.now());
   const initSets=(ex)=>Array.from({length:ex.sets},(_,si)=>{
@@ -719,6 +910,7 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
   const [exStates,setExStates]=useState(()=>workout.exercises.map(ex=>({id:ex.id,name:ex.name,weight:ex.weight,skipped:false,sets:initSets(ex)})));
   const [note,setNote]=useState("");
   const [elapsed,setElapsed]=useState(0);
+  const [showFinish,setShowFinish]=useState(false);
   useEffect(()=>{const t=setInterval(()=>setElapsed(Math.floor((Date.now()-startTime.current)/1000)),1000);return()=>clearInterval(t);},[]);
   const fmtTime=(secs)=>{const h=Math.floor(secs/3600);const m=Math.floor((secs%3600)/60);const s=secs%60;const parts=[];if(h>0)parts.push(`${h}h`);if(m>0)parts.push(`${m}min`);if(s>0||parts.length===0)parts.push(`${s}sec`);return parts.join(" ");};
   const updSet=(ei,si,ch)=>setExStates(s=>s.map((ex,i)=>i!==ei?ex:{...ex,sets:ex.sets.map((st,j)=>j!==si?st:{...st,...ch})}));
@@ -736,12 +928,19 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
     }
   };
   const allDone=exStates.every(ex=>ex.skipped||ex.sets.every(st=>st.skipped||st.done));
-  const handleFinish=()=>{const duration=Math.round((Date.now()-startTime.current)/60000);onFinish({date:new Date().toISOString(),dayKey:workout.id,duration,note,exercises:exStates});};
+  const incompleteSets=exStates.flatMap((exState,ei)=>
+    exState.skipped?[]:
+    exState.sets.map((st,si)=>({exName:exState.name,si,st,ei})).filter(({st})=>!st.skipped&&!st.done)
+  );
+  const doFinish=()=>{const duration=Math.round((Date.now()-startTime.current)/60000);onFinish({date:new Date().toISOString(),dayKey:workout.id,duration,note,exercises:exStates});};
+  const handleFinishClick=()=>{
+    if(incompleteSets.length>0){setShowFinish(true);}else{doFinish();}
+  };
   return(<div style={{display:"flex",flexDirection:"column",minHeight:"100svh"}}>
     <div className="w-header">
       <button className="back-btn" onClick={onBack}><Ic.Back/></button>
       <div style={{flex:1}}><div style={{fontWeight:800,fontSize:17,letterSpacing:-.3}}>{workout.label}</div><div style={{fontSize:12,color:"var(--muted)"}}>{exStates.filter(e=>!e.skipped).length} exercises</div></div>
-      <button className="finish-btn" style={{width:"auto",margin:0,padding:"8px 18px",fontSize:14,letterSpacing:0}} onClick={handleFinish}>{allDone?"Done":"Finish"}</button>
+      <button className="finish-btn" style={{width:"auto",margin:0,padding:"8px 18px",fontSize:14,letterSpacing:0}} onClick={handleFinishClick}>{allDone?"Done":"Finish"}</button>
     </div>
     <WorkoutStats exStates={exStates} elapsed={elapsed} fmtTime={fmtTime}/>
     <div style={{flex:1,overflowY:"auto",paddingBottom:80}}>
@@ -771,12 +970,37 @@ function WorkoutSession({workout,history,onFinish,onBack,startRest,restEnabled})
           </div>
         </div>);
       })}
-      <div className="note-wrap" style={{marginTop:8}}>
-        <div className="note-lbl">Session note (optional)</div>
-        <textarea className="note-ta" placeholder="Feeling a bit tired today..." value={note} onChange={e=>setNote(e.target.value)}/>
-      </div>
-      <button className="finish-btn" onClick={handleFinish}>{allDone?"FINISH WORKOUT":"FINISH WORKOUT (EARLY)"}</button>
+      <button className="finish-btn" onClick={handleFinishClick}>{allDone?"FINISH WORKOUT":"FINISH WORKOUT (EARLY)"}</button>
     </div>
+
+    {showFinish&&(
+      <div className="finish-modal-overlay" onClick={()=>setShowFinish(false)}>
+        <div className="finish-modal" onClick={e=>e.stopPropagation()}>
+          <div style={{fontWeight:800,fontSize:20,letterSpacing:-0.3,marginBottom:4}}>Finish workout?</div>
+          {incompleteSets.length>0&&<>
+            <div style={{fontSize:13,color:"var(--muted2)",marginBottom:12}}>You have {incompleteSets.length} unchecked set{incompleteSets.length>1?"s":""}:</div>
+            <div style={{marginBottom:14,maxHeight:160,overflowY:"auto"}}>
+              {incompleteSets.map(({exName,si,ei},k)=>(
+                <div key={k} className="incomplete-set">
+                  <div style={{width:24,height:24,borderRadius:6,background:"var(--s3)",border:"1px solid var(--border2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"var(--muted2)",flexShrink:0}}>
+                    {si+1}
+                  </div>
+                  <span>{exName}</span>
+                </div>
+              ))}
+            </div>
+          </>}
+          <div style={{marginBottom:16}}>
+            <div className="note-lbl">Session note</div>
+            <textarea className="note-ta" placeholder="How did it feel? Any notes..." value={note} onChange={e=>setNote(e.target.value)} style={{minHeight:72}}/>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn-ghost" style={{flex:1,padding:12}} onClick={()=>setShowFinish(false)}>Keep training</button>
+            <button className="finish-btn" style={{flex:2,display:"block",width:"auto",margin:0,padding:12}} onClick={doFinish}>Finish anyway</button>
+          </div>
+        </div>
+      </div>
+    )}
   </div>);
 }
 
@@ -883,10 +1107,12 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
   const [loadingPhase,setLoadingPhase]=useState(null);
+  const [editingIdx,setEditingIdx]=useState(null);
+  const [editingText,setEditingText]=useState("");
   const bottomRef=useRef(null);
   const inputRef=useRef(null);
 
-  const newChat=()=>{sessionId.current=Date.now().toString();setMsgs([makeGreeting()]);setInput("");};
+  const newChat=()=>{sessionId.current=Date.now().toString();setMsgs([makeGreeting()]);setInput("");setEditingIdx(null);};
 
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
@@ -906,12 +1132,26 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   const dismissProposal=(msgIdx)=>{
     setMsgs(m=>m.map((x,i)=>i===msgIdx?{...x,proposal:{...x.proposal,status:"dismissed"}}:x));
   };
+  const submitEdit=(idx)=>{
+    const newText=editingText.trim();
+    if(!newText){setEditingIdx(null);return;}
+    const msgsUpToEdit=msgs.slice(0,idx);
+    const branchId=Date.now().toString();
+    const oldSession={id:sessionId.current,date:new Date().toISOString(),title:msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat",msgs};
+    setSessions(prev=>[oldSession,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
+    sessionId.current=branchId;
+    setEditingIdx(null);
+    setMsgs([...msgsUpToEdit,{role:"user",text:newText,time:nowT(),branched:true}]);
+    setLoading(true);
+    send(newText,[...msgsUpToEdit]);
+  };
 
-  const send=async(textOverride)=>{
+  const send=async(textOverride,msgHistoryOverride)=>{
     const text=(textOverride??input).trim();
     if(!text||loading)return;
     if(!textOverride)setInput("");
-    setMsgs(m=>[...m,{role:"user",text,time:nowT()}]); setLoading(true);
+    if(!msgHistoryOverride)setMsgs(m=>[...m,{role:"user",text,time:nowT()}]);
+    setLoading(true);
     const firstName=user?.name?.split(" ")[0]??"there";
     const apiBase=import.meta.env.VITE_API_URL??"";
 
@@ -973,7 +1213,8 @@ IMPORTANT: This is a program modification request. You MUST respond in exactly t
 
 ${ctx}`;
 
-      const ad=await callAPI(answerPrompt,[...msgs.slice(1),{role:"user",text}],1200);
+      const contextMsgs=msgHistoryOverride??msgs;
+      const ad=await callAPI(answerPrompt,[...contextMsgs.slice(1),{role:"user",text}],1200);
       let reply=ad.reply??(ad.error?`Error: ${ad.error}`:"Connection error.");
       let proposalData=null;
       const match=reply.match(/<PROGRAM_UPDATE>([\s\S]*?)<\/PROGRAM_UPDATE>/);
@@ -993,6 +1234,13 @@ ${ctx}`;
     setLoading(false); setLoadingPhase(null);
   };
 
+  const deleteSession=(id)=>{setSessions(prev=>prev.filter(s=>s.id!==id));if(viewingId===id)setView("history");};
+  const continueSession=(s)=>{
+    sessionId.current=s.id;
+    setMsgs(s.msgs);
+    setView("chat");
+  };
+
   if(view==="history"){
     const past=sessions.filter(s=>s.id!==sessionId.current);
     return(
@@ -1004,9 +1252,12 @@ ${ctx}`;
         <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
           {past.length===0&&<p style={{color:"var(--muted)",textAlign:"center",marginTop:40}}>No past chats yet.</p>}
           {past.map(s=>(
-            <div key={s.id} className="card" style={{cursor:"pointer",marginBottom:10}} onClick={()=>{setViewingId(s.id);setView("past");}}>
-              <div style={{fontWeight:600,fontSize:14,marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
-              <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(s.date).toLocaleDateString([],{weekday:"short",year:"numeric",month:"short",day:"numeric"})}</div>
+            <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <div className="card" style={{flex:1,cursor:"pointer",marginBottom:0,padding:"12px 14px"}} onClick={()=>{setViewingId(s.id);setView("past");}}>
+                <div style={{fontWeight:600,fontSize:14,marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.title}</div>
+                <div style={{fontSize:12,color:"var(--muted)"}}>{new Date(s.date).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric"})}</div>
+              </div>
+              <button onClick={()=>deleteSession(s.id)} className="btn-icon" style={{flexShrink:0,width:38,height:38,background:"var(--s2)",border:"1px solid var(--border)"}}><Ic.Trash/></button>
             </div>
           ))}
         </div>
@@ -1018,11 +1269,14 @@ ${ctx}`;
     const past=sessions.find(s=>s.id===viewingId);
     return(
       <div className="chat-wrap">
-        <div className="phdr" style={{display:"flex",alignItems:"center",gap:12}}>
+        <div className="phdr" style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="btn-ghost" onClick={()=>setView("history")} style={{fontSize:22,lineHeight:1}}>←</button>
-          <h1 style={{fontSize:20}}>{past?.title?.slice(0,30)??"Chat"}</h1>
+          <div style={{flex:1,minWidth:0}}>
+            <h1 style={{fontSize:18,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{past?.title?.slice(0,40)??"Chat"}</h1>
+            {past?.date&&<p style={{fontSize:11,marginTop:1}}>{new Date(past.date).toLocaleDateString([],{weekday:"long",month:"short",day:"numeric"})}</p>}
+          </div>
         </div>
-        <div className="chat-msgs">
+        <div className="chat-msgs" style={{flex:1}}>
           {(past?.msgs??[]).map((m,i)=>(
             <div key={i} className={`msg ${m.role}`}>
               {m.role==="ai"
@@ -1031,6 +1285,9 @@ ${ctx}`;
               }
             </div>
           ))}
+        </div>
+        <div style={{padding:"12px 14px",borderTop:"1px solid var(--border)",flexShrink:0}}>
+          <button className="btn-accent" style={{fontSize:14,padding:13}} onClick={()=>continueSession(past)}>Continue this chat</button>
         </div>
       </div>
     );
@@ -1098,8 +1355,23 @@ ${ctx}`;
                 </div>
               ):(
                 <div className="msg user">
-                  <div className="bubble">{m.text}</div>
-                  <div className="msg-time" style={{textAlign:"right"}}>{m.time}</div>
+                  {editingIdx===i?(
+                    <div className="editing-bubble">
+                      <textarea className="editing-input" value={editingText} onChange={e=>setEditingText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();submitEdit(i);}if(e.key==="Escape")setEditingIdx(null);}} rows={3} autoFocus/>
+                      <div style={{display:"flex",gap:6,marginTop:8,justifyContent:"flex-end"}}>
+                        <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setEditingIdx(null)}>Cancel</button>
+                        <button className="btn-accent" style={{padding:"5px 16px",fontSize:12,width:"auto"}} onClick={()=>submitEdit(i)}>Send</button>
+                      </div>
+                    </div>
+                  ):(
+                    <>
+                      <div style={{display:"flex",alignItems:"flex-end",gap:6,justifyContent:"flex-end"}}>
+                        {!loading&&<button className="edit-msg-btn" onClick={()=>{setEditingIdx(i);setEditingText(m.text);}}>Edit</button>}
+                        <div className="bubble">{m.text}{m.branched&&<span className="branch-badge">edited</span>}</div>
+                      </div>
+                      <div className="msg-time" style={{textAlign:"right"}}>{m.time}</div>
+                    </>
+                  )}
                 </div>
               )}
               {m.proposal&&(
@@ -1660,6 +1932,26 @@ function TrackerTab({ goals, setGoals, logs, setLogs, meals, setMeals, onOpenCal
         })()}
       </div>
     </div>
+
+    {/* ── NUTRITION GOALS ── */}
+    <div className="card" style={{marginBottom:12}}>
+      <div className="section-header"><div className="ctitle" style={{marginBottom:0}}>NUTRITION GOALS</div></div>
+      {[{id:"calories",label:"Calories",unit:"kcal",color:"#7c3aed"},{id:"protein",label:"Protein",unit:"g",color:"#4ECDC4"},{id:"carbs",label:"Carbs",unit:"g",color:"#FFD166"},{id:"fat",label:"Fat",unit:"g",color:"#f59e0b"}].map(({id,label,unit,color})=>{
+        const g=goals.find(x=>x.id===id);
+        const val=g?.target??"";
+        return(<div key={id} className="nutri-goal-row">
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:8,height:8,borderRadius:"50%",background:color,flexShrink:0}}/>
+            <div style={{fontWeight:500,fontSize:14}}>{label}</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <input type="number" value={val} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))setGoals(gs=>gs.map(x=>x.id===id?{...x,target:v}:x));}}
+              style={{width:72,background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:14,padding:"5px 8px",textAlign:"right",outline:"none",fontFamily:"var(--db)"}}/>
+            <span style={{fontSize:12,color:"var(--muted2)",width:30}}>{unit}</span>
+          </div>
+        </div>);
+      })}
+    </div>
   </>);
 }
 
@@ -1678,18 +1970,31 @@ export default function App() {
   const [calMode,       setCalMode]      = useState(null);
   const swipeRef = useRef({x:null,y:null});
   const TABS = ["home","workout","tracker","chat","settings"];
+  const [tabAnim,setTabAnim]=useState(null);
+  const tabAnimTimer=useRef(null);
+  const switchTab=(newTab)=>{
+    const cur=TABS.indexOf(tab),next=TABS.indexOf(newTab);
+    if(cur===next) return;
+    const dir=next>cur?"left":"right";
+    setTab(newTab);
+    setTabAnim(dir);
+    clearTimeout(tabAnimTimer.current);
+    tabAnimTimer.current=setTimeout(()=>setTabAnim(null),250);
+  };
   const onSwipeStart = e => { swipeRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY}; };
   const onSwipeEnd = e => {
     const {x,y}=swipeRef.current; if(x===null) return;
     swipeRef.current={x:null,y:null};
     const dx=e.changedTouches[0].clientX-x, dy=e.changedTouches[0].clientY-y;
-    if(Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*0.75) return;
+    if(Math.abs(dx)<55||Math.abs(dy)>Math.abs(dx)*0.7) return;
     const idx=TABS.indexOf(tab);
-    if(dx<0&&idx<TABS.length-1) setTab(TABS[idx+1]);
-    else if(dx>0&&idx>0) setTab(TABS[idx-1]);
+    if(dx<0&&idx<TABS.length-1) switchTab(TABS[idx+1]);
+    else if(dx>0&&idx>0) switchTab(TABS[idx-1]);
   };
   const [activeWorkout, setActiveWorkout]= useState(null);
   const [restTimer,     setRestTimer]    = useState(null);
+  const [restMinimized, setRestMinimized]= useState(false);
+  const [showStats,     setShowStats]    = useState(false);
   const [editingDay,    setEditingDay]   = useState(null);
   const [histDetail,    setHistDetail]   = useState(null);
   const restRef        = useRef(null);
@@ -1764,10 +2069,20 @@ export default function App() {
 
   const startRest=useCallback((secs)=>{
     if(!restEnabled||!secs) return;
+    requestNotificationPermission();
     setRestTimer(secs);
+    setRestMinimized(false);
     clearInterval(restRef.current);
     restRef.current=setInterval(()=>{
-      setRestTimer(t=>{ if(t<=1){clearInterval(restRef.current);return null;} return t-1; });
+      setRestTimer(t=>{
+        if(t<=1){
+          clearInterval(restRef.current);
+          playRestEndSound();
+          sendRestNotification();
+          return null;
+        }
+        return t-1;
+      });
     },1000);
   },[restEnabled]);
 
@@ -1817,14 +2132,30 @@ export default function App() {
     <div className="login-logo">GRIND</div>
     <p className="login-tagline">Your free AI personal trainer.<br/>Track. Progress. Never skip leg day.</p>
     <button className="google-btn" onClick={handleLogin}><Ic.Google/> Continue with Google</button>
-    <button className="demo-lnk" onClick={handleDemo}>Try without signing in</button>
   </div></>);
 
   if(!dataLoaded) return(<><style>{CSS}</style><div className="login"><div className="login-logo">GRIND</div><p style={{color:"var(--muted)"}}>Loading your data...</p></div></>);
 
   if(activeWorkout) return(<><style>{CSS}</style><div className="app">
     <WorkoutSession workout={activeWorkout} history={history} onFinish={handleFinish} onBack={()=>setActiveWorkout(null)} startRest={startRest} restEnabled={restEnabled}/>
-    {restTimer!==null&&(<div className="rest-overlay"><div className="rest-lbl">REST</div><div className="rest-num" style={{color:restTimer<=10?"var(--accent)":"var(--text)"}}>{restTimer}</div><button className="rest-skip" onClick={()=>{clearInterval(restRef.current);setRestTimer(null);}}>SKIP REST</button></div>)}
+    {restTimer!==null&&!restMinimized&&(
+      <div className="rest-overlay">
+        <div className="rest-lbl">REST</div>
+        <div className="rest-num" style={{color:restTimer<=10?"var(--accent)":"var(--text)"}}>{restTimer}</div>
+        <div style={{display:"flex",gap:12,marginTop:36}}>
+          <button className="rest-skip" style={{padding:"14px 24px",fontSize:14}} onClick={()=>setRestMinimized(true)}>Minimize</button>
+          <button className="rest-skip" style={{padding:"14px 24px",fontSize:14}} onClick={()=>{clearInterval(restRef.current);setRestTimer(null);}}>Skip</button>
+        </div>
+      </div>
+    )}
+    {restTimer!==null&&restMinimized&&(
+      <div className="rest-pill" onClick={()=>setRestMinimized(false)}>
+        <Ic.Clock/>
+        <span className="rest-pill-num">{restTimer}s</span>
+        <span style={{fontSize:11,color:"var(--muted2)"}}>tap to expand</span>
+        <button onClick={e=>{e.stopPropagation();clearInterval(restRef.current);setRestTimer(null);}} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:16,lineHeight:1,marginLeft:4,padding:2}}>×</button>
+      </div>
+    )}
   </div></>);
 
   if(histDetail) return(<><style>{CSS}</style><div className="app">
@@ -1833,7 +2164,9 @@ export default function App() {
 
   return(<><style>{CSS}</style>{themeCSS&&<style>{themeCSS}</style>}<div className="app" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
+    {showStats&&<StatsScreen history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs} onClose={()=>setShowStats(false)}/>}
     {calMode&&<BigCalendar mode={calMode} program={program} history={history} startDate={ls.get("gr_start",null)} trackerGoals={trackerGoals} trackerLogs={trackerLogs} onClose={()=>setCalMode(null)} onSessionClick={s=>{setCalMode(null);setHistDetail(s);}}/>}
+    <div key={tab} className={tabAnim?`tab-slide-${tabAnim}`:""} style={{flex:1,display:"flex",flexDirection:"column",minHeight:0,overflow:"hidden"}}>
 
     {tab==="home"&&(()=>{
       const hr=new Date().getHours();
@@ -1841,7 +2174,7 @@ export default function App() {
       const todayStr=new Date().toISOString().slice(0,10);
       const doneToday=history.some(h=>h.date===todayStr&&h.dayKey===todayDay.id&&!todayDay.isRest);
       return(<>
-      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div>
+      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="btn-icon" onClick={()=>setShowStats(true)} style={{width:38,height:38,background:"var(--s2)",border:"1px solid var(--border2)"}}><Ic.Stats/></button><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>
@@ -2039,20 +2372,6 @@ export default function App() {
           <div className="srow"><div><div className="slbl">Rest timer between sets</div><div className="ssub">Countdown after each set</div></div><button className={`tog ${restEnabled?"on":""}`} onClick={()=>setRestEnabled(v=>!v)}/></div>
           <div className="srow"><div><div className="slbl">Schedule start date</div><div className="ssub">First day of your program cycle</div></div><input type="date" defaultValue={ls.get("gr_start","")?.slice(0,10)} onChange={e=>ls.set("gr_start",new Date(e.target.value).toISOString())} style={{background:"var(--s2)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"6px 8px",fontSize:13}}/></div>
         </div>
-        <div className="card">
-          <div className="ctitle" style={{fontSize:14}}>NUTRITION GOALS</div>
-          {[{id:"calories",label:"Daily Calories",unit:"kcal"},{id:"protein",label:"Protein",unit:"g"},{id:"carbs",label:"Carbs",unit:"g"},{id:"fat",label:"Fat",unit:"g"}].map(({id,label,unit})=>{
-            const g=trackerGoals.find(x=>x.id===id);
-            return(<div key={id} className="srow">
-              <div className="slbl">{label}</div>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <input type="number" value={g?.target??""} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))setTrackerGoals(gs=>gs.map(x=>x.id===id?{...x,target:v}:x));}}
-                  style={{width:72,background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,color:"var(--text)",fontSize:14,padding:"5px 8px",textAlign:"right",outline:"none"}}/>
-                <span style={{fontSize:12,color:"var(--muted2)",width:28}}>{unit}</span>
-              </div>
-            </div>);
-          })}
-        </div>
         <div className="card"><div className="ctitle" style={{fontSize:14}}>DATA</div>
           <div className="srow"><div><div className="slbl">Export all data</div><div className="ssub">Download as JSON file</div></div><button className="btn-ghost" onClick={()=>{const blob=new Blob([JSON.stringify({history,program,trackerGoals,trackerLogs,meals},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="grind-data.json";a.click();URL.revokeObjectURL(url);}}>Export</button></div>
           <div className="srow"><div><div className="slbl">Clear all history</div><div className="ssub">Cannot be undone</div></div><button className="btn-danger" onClick={()=>{if(window.confirm("Delete all history?"))setHistory([]);}}>Clear</button></div>
@@ -2061,7 +2380,8 @@ export default function App() {
       </div>
     </>}
 
-    <nav className="bnav">{[{id:"home",label:"Home",icon:<Ic.Home/>},{id:"workout",label:"Program",icon:<Ic.Dumbbell/>},{id:"tracker",label:"Track",icon:<Ic.Target/>},{id:"chat",label:"Trainer",icon:<Ic.Chat/>},{id:"settings",label:"Settings",icon:<Ic.Cog/>}].map(n=>(<button key={n.id} className={`nbtn ${tab===n.id?"on":""}`} onClick={()=>setTab(n.id)}>{n.icon}{n.label}</button>))}</nav>
+    </div>
+    <nav className="bnav">{[{id:"home",label:"Home",icon:<Ic.Home/>},{id:"workout",label:"Program",icon:<Ic.Dumbbell/>},{id:"tracker",label:"Track",icon:<Ic.Target/>},{id:"chat",label:"Trainer",icon:<Ic.Chat/>},{id:"settings",label:"Settings",icon:<Ic.Cog/>}].map(n=>(<button key={n.id} className={`nbtn ${tab===n.id?"on":""}`} onClick={()=>switchTab(n.id)}>{n.icon}{n.label}</button>))}</nav>
 
     {editingDay&&<DayEditor day={editingDay} onClose={()=>setEditingDay(null)}
       onSave={upd=>{ const hasEx=upd.exercises.length>0; updateDay(editingDay.id,{...upd,isRest:!hasEx}); setEditingDay(null); }}
