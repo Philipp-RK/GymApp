@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function getSetLabel(sets, si) {
   const t = sets[si]?.setType ?? "normal";
@@ -819,7 +820,7 @@ function computeProgramDiff(current,proposed){
         if(propEx.sets!==curEx.sets) diffs.push(`sets: ${curEx.sets}→${propEx.sets}`);
         if(propEx.reps!==curEx.reps) diffs.push(`reps: ${curEx.reps}→${propEx.reps}`);
         if(Number(propEx.weight)!==Number(curEx.weight)) diffs.push(`weight: ${curEx.weight}→${propEx.weight}kg`);
-        if(propEx.rest!==curEx.rest) diffs.push(`rest: ${curEx.rest}→${propEx.rest}s`);
+        if(propEx.rest!=null&&curEx.rest!=null&&propEx.rest!==curEx.rest) diffs.push(`rest: ${curEx.rest}→${propEx.rest}s`);
         if(propEx.name!==curEx.name) diffs.push(`renamed to "${propEx.name}"`);
         if(diffs.length>0) changes.push({type:"ex_modified",day:propDay.label,name:curEx.name,diffs});
       }
@@ -1691,8 +1692,9 @@ export default function App() {
   const [restTimer,     setRestTimer]    = useState(null);
   const [editingDay,    setEditingDay]   = useState(null);
   const [histDetail,    setHistDetail]   = useState(null);
-  const restRef   = useRef(null);
-  const saveTimer = useRef(null);
+  const restRef        = useRef(null);
+  const saveTimer      = useRef(null);
+  const tokenExpired   = useRef(false);
 
   useEffect(()=>{if(user)ls.set("gr_user",user);},[user]);
 
@@ -1701,7 +1703,7 @@ export default function App() {
     if(!user?.accessToken||user.demo){setDataLoaded(true);return;}
     const apiBase=import.meta.env.VITE_API_URL??"";
     fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load",accessToken:user.accessToken})})
-      .then(r=>{if(r.status===401){console.warn("[db] session expired");return null;}return r.json();})
+      .then(r=>{if(r.status===401){tokenExpired.current=true;console.warn("[db] session expired");return null;}return r.json();})
       .then(d=>{
         if(!d){setDataLoaded(true);return;}
         if(d.program?.length) setProgram(d.program);
@@ -1723,12 +1725,13 @@ export default function App() {
 
   // Debounced save to Supabase whenever data changes
   useEffect(()=>{
-    if(!user?.accessToken||user.demo||!dataLoaded) return;
+    if(!user?.accessToken||user.demo||!dataLoaded||tokenExpired.current) return;
     clearTimeout(saveTimer.current);
     saveTimer.current=setTimeout(()=>{
+      if(tokenExpired.current) return;
       const apiBase=import.meta.env.VITE_API_URL??"";
       fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled,tracker_goals:trackerGoals,tracker_logs:trackerLogs,meals})})
-        .then(r=>{if(r.status===401)console.warn("[db] save: session expired");})
+        .then(r=>{if(r.status===401){tokenExpired.current=true;console.warn("[db] save: session expired");}})
         .catch(console.error);
     },1500);
     return()=>clearTimeout(saveTimer.current);
@@ -2067,5 +2070,5 @@ export default function App() {
       onRemoveEx={eid=>{ removeEx(editingDay.id,eid); setEditingDay(d=>{ const exs=d.exercises.filter(e=>e.id!==eid); return{...d,exercises:exs,isRest:exs.length===0}; }); }}
       onDelete={()=>{ setProgram(p=>p.filter(d=>d.id!==editingDay.id)); setEditingDay(null); }}
     />}
-  </div></>);
+  </div><SpeedInsights/></>);
 }
