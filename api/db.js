@@ -14,7 +14,6 @@ export default async function handler(req, res) {
   const { action, accessToken, ...data } = body;
   if (!accessToken) return res.status(401).json({ error: "No access token" });
 
-  // Verify Google token and get email
   let email;
   try {
     const r = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
@@ -33,24 +32,63 @@ export default async function handler(req, res) {
     "apikey": SUPABASE_SERVICE_KEY,
   };
 
+  const sbGet = (table) =>
+    fetch(`${SUPABASE_URL}/rest/v1/${table}?user_email=eq.${encodeURIComponent(email)}&select=*`, { headers: sbHeaders })
+      .then(r => r.json())
+      .then(rows => (Array.isArray(rows) && rows.length ? rows[0] : null));
+
+  const sbUpsert = (table, row) =>
+    fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: "POST",
+      headers: { ...sbHeaders, Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify({ user_email: email, ...row }),
+    });
+
   if (action === "load") {
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/user_data?user_email=eq.${encodeURIComponent(email)}&select=*`,
-      { headers: sbHeaders }
-    );
-    const rows = await r.json();
-    if (!Array.isArray(rows) || rows.length === 0)
-      return res.status(200).json({ program: null, history: [], chat_sessions: [], sheet_id: null, rest_enabled: true });
-    return res.status(200).json(rows[0]);
+    const [settings, program, statistics, chats, track, home] = await Promise.all([
+      sbGet("settings"),
+      sbGet("program"),
+      sbGet("statistics"),
+      sbGet("chats"),
+      sbGet("track"),
+      sbGet("home"),
+    ]);
+    return res.status(200).json({
+      program:       program?.program       ?? null,
+      history:       statistics?.history    ?? [],
+      chat_sessions: chats?.chat_sessions   ?? [],
+      sheet_id:      settings?.sheet_id     ?? null,
+      rest_enabled:  settings?.rest_enabled ?? true,
+      tracker_goals: track?.tracker_goals   ?? [],
+      tracker_logs:  track?.tracker_logs    ?? [],
+      meals:         track?.meals           ?? [],
+      start_date:    home?.start_date       ?? null,
+    });
   }
 
+  const TABLE_COLUMNS = {
+    settings:   ["rest_enabled", "sheet_id"],
+    program:    ["program"],
+    statistics: ["history"],
+    chats:      ["chat_sessions"],
+    track:      ["tracker_goals", "tracker_logs", "meals"],
+    home:       ["start_date"],
+  };
+
   if (action === "save") {
-    const row = { user_email: email, updated_at: new Date().toISOString(), ...data };
-    await fetch(`${SUPABASE_URL}/rest/v1/user_data`, {
-      method: "POST",
-      headers: { ...sbHeaders, "Prefer": "resolution=merge-duplicates" },
-      body: JSON.stringify(row),
-    });
+    const { table } = data;
+    const allowed = TABLE_COLUMNS[table];
+    if (!allowed) return res.status(400).json({ error: "Unknown table" });
+
+    const row = {};
+    for (const col of allowed) {
+      if (data[col] !== undefined) row[col] = data[col];
+    }
+
+    await Promise.all([
+      sbUpsert(table, row),
+      sbUpsert("main", { updated_at: new Date().toISOString() }),
+    ]);
     return res.status(200).json({ ok: true });
   }
 

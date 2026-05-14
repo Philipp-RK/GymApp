@@ -321,7 +321,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .app{max-width:430px;margin:0 auto;height:100svh;display:flex;flex-direction:column;overflow:hidden;}
 
-.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(17,17,17,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,6px);}
+.bnav{flex-shrink:0;width:100%;background:rgba(17,17,17,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,6px);}
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 6px;background:none;border:none;cursor:pointer;color:var(--muted2);font-family:var(--db);font-size:9px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;transition:color .15s;position:relative;}
 .nbtn.on{color:var(--accent);}
 .nbtn.on::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:2px;border-radius:0 0 2px 2px;background:var(--accent);}
@@ -421,8 +421,9 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
 .msg.ai .bubble{background:var(--s2);border:1px solid var(--border);border-bottom-left-radius:4px;}
 .msg-time{font-size:10px;color:var(--muted);margin-top:3px;padding:0 3px;}
-.chat-bar{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));min-height:64px;}
-.chat-in{flex:1;background:var(--s2);border:1.5px solid var(--border2);border-radius:22px;color:var(--text);font-size:16px;padding:10px 16px;outline:none;min-width:0;min-height:44px;-webkit-appearance:none;appearance:none;-webkit-user-select:text;user-select:text;display:block;box-sizing:border-box;transition:border-color .15s;}
+.chat-bar{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);min-height:64px;}
+.chat-in{flex:1;background:var(--s2);border:1.5px solid var(--muted2);border-radius:22px;color:var(--text);-webkit-text-fill-color:var(--text);font-size:16px;padding:10px 16px;outline:none;min-width:0;min-height:44px;-webkit-appearance:none;appearance:none;-webkit-user-select:text;user-select:text;display:block;box-sizing:border-box;transition:border-color .15s;}
+.chat-in::placeholder{color:var(--muted);-webkit-text-fill-color:var(--muted);opacity:1;}
 .chat-in:focus{border-color:var(--accent);}
 .send-btn{width:44px;height:44px;min-width:44px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s;flex-shrink:0;}
 .send-btn:active{opacity:.8;}
@@ -555,7 +556,7 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .stats-pills-scroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:10px;}
 .stats-pills-scroll::-webkit-scrollbar{display:none;}
 
-.past-chat-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
+.past-chat-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);}
 
 .hist-card-inner{position:relative;padding-right:40px;}
 .hist-card-del{position:absolute;top:50%;right:-2px;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;opacity:0;transition:opacity .15s;}
@@ -2352,12 +2353,16 @@ export default function App() {
     const idx=TABS.indexOf(newTab);
     setTab(newTab);
     if(scrollRef.current){
-      scrollRef.current.scrollTo({left:idx*scrollRef.current.offsetWidth,behavior:"smooth"});
+      scrollRef.current.scrollTo({left:idx*scrollRef.current.offsetWidth,behavior:"instant"});
     }
   };
   const onTabScroll=()=>{
     if(!scrollRef.current) return;
-    const idx=Math.round(scrollRef.current.scrollLeft/scrollRef.current.offsetWidth);
+    const w=scrollRef.current.offsetWidth;
+    if(!w) return;
+    const sl=scrollRef.current.scrollLeft;
+    const idx=Math.round(sl/w);
+    if(Math.abs(sl-idx*w)>2) return; // still animating — not settled on a snap point
     if(TABS[idx]&&TABS[idx]!==tab) setTab(TABS[idx]);
   };
   useLayoutEffect(()=>{
@@ -2371,7 +2376,7 @@ export default function App() {
   const [editingDay,    setEditingDay]   = useState(null);
   const [histDetail,    setHistDetail]   = useState(null);
   const restRef        = useRef(null);
-  const saveTimer      = useRef(null);
+  const saveTimers     = useRef({});
   const tokenExpired   = useRef(false);
   const todayCardRef      = useRef(null);
   const workoutScrollRef  = useRef(null);
@@ -2399,24 +2404,29 @@ export default function App() {
         }
         if(d.tracker_logs)    setTrackerLogs(d.tracker_logs);
         if(d.meals?.length)   setMeals(d.meals);
+        if(d.start_date)      ls.set("gr_start",d.start_date);
         setDataLoaded(true);
       })
       .catch(()=>setDataLoaded(true));
   },[user?.accessToken]);
 
-  // Debounced save to Supabase whenever data changes
-  useEffect(()=>{
+  // Partial debounced saves — one effect per table
+  const dbSave=(table,payload)=>{
     if(!user?.accessToken||user.demo||!dataLoaded||tokenExpired.current) return;
-    clearTimeout(saveTimer.current);
-    saveTimer.current=setTimeout(()=>{
+    clearTimeout(saveTimers.current[table]);
+    saveTimers.current[table]=setTimeout(()=>{
       if(tokenExpired.current) return;
       const apiBase=import.meta.env.VITE_API_URL??"";
-      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",accessToken:user.accessToken,program,history,chat_sessions:chatSessions,sheet_id:sheetId,rest_enabled:restEnabled,tracker_goals:trackerGoals,tracker_logs:trackerLogs,meals})})
+      fetch(`${apiBase}/api/db`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",table,accessToken:user.accessToken,...payload})})
         .then(r=>{if(r.status===401){tokenExpired.current=true;console.warn("[db] save: session expired");}})
         .catch(console.error);
     },1500);
-    return()=>clearTimeout(saveTimer.current);
-  },[program,history,chatSessions,sheetId,restEnabled,trackerGoals,trackerLogs,meals,dataLoaded]);
+  };
+  useEffect(()=>{ dbSave("program",   {program}); },[program,dataLoaded]);
+  useEffect(()=>{ dbSave("statistics",{history}); },[history,dataLoaded]);
+  useEffect(()=>{ dbSave("chats",     {chat_sessions:chatSessions}); },[chatSessions,dataLoaded]);
+  useEffect(()=>{ dbSave("settings",  {rest_enabled:restEnabled,sheet_id:sheetId}); },[restEnabled,sheetId,dataLoaded]);
+  useEffect(()=>{ dbSave("track",     {tracker_goals:trackerGoals,tracker_logs:trackerLogs,meals}); },[trackerGoals,trackerLogs,meals,dataLoaded]);
 
   useEffect(()=>{
     const hash=window.location.hash;
@@ -2782,7 +2792,7 @@ export default function App() {
         </div>
         <div className="card"><div className="ctitle" style={{fontSize:14}}>WORKOUT</div>
           <div className="srow"><div><div className="slbl">Rest timer between sets</div><div className="ssub">Countdown after each set</div></div><button className={`tog ${restEnabled?"on":""}`} onClick={()=>setRestEnabled(v=>!v)}/></div>
-          <div className="srow"><div><div className="slbl">Schedule start date</div><div className="ssub">First day of your program cycle</div></div><input type="date" defaultValue={ls.get("gr_start","")?.slice(0,10)} onChange={e=>ls.set("gr_start",new Date(e.target.value).toISOString())} style={{background:"var(--s2)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"6px 8px",fontSize:13}}/></div>
+          <div className="srow"><div><div className="slbl">Schedule start date</div><div className="ssub">First day of your program cycle</div></div><input type="date" defaultValue={ls.get("gr_start","")?.slice(0,10)} onChange={e=>{const iso=new Date(e.target.value).toISOString();ls.set("gr_start",iso);dbSave("home",{start_date:iso});}} style={{background:"var(--s2)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"6px 8px",fontSize:13}}/></div>
         </div>
         <div className="card"><div className="ctitle" style={{fontSize:14}}>DATA</div>
 
