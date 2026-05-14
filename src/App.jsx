@@ -2435,8 +2435,8 @@ export default function App() {
     const state=params.get("state");
     window.history.replaceState(null,"",window.location.pathname);
     if(state==="capacitor"){
-      // Running in Chrome Custom Tab after Android OAuth — redirect to deep link so the app can catch it
-      window.location.href=`com.grind.app://auth#access_token=${encodeURIComponent(token)}`;
+      // intent:// tells Chrome to fire the Android intent AND close the Custom Tab automatically
+      window.location.href=`intent://auth?access_token=${encodeURIComponent(token)}#Intent;scheme=com.grind.app;package=com.grind.app;end`;
       return;
     }
     fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:`Bearer ${token}`}})
@@ -2450,7 +2450,13 @@ export default function App() {
     if(!window.Capacitor?.isNativePlatform?.()) return;
     const extractToken=(url)=>{
       if(!url?.startsWith("com.grind.app://auth")) return null;
+      const qi=url.indexOf("?");
       const hi=url.indexOf("#");
+      if(qi!==-1){
+        const q=new URLSearchParams(url.slice(qi+1,hi===-1?undefined:hi));
+        const t=decodeURIComponent(q.get("access_token")||"");
+        if(t) return t;
+      }
       if(hi===-1) return null;
       const p=new URLSearchParams(url.slice(hi+1));
       return decodeURIComponent(p.get("access_token")||"")||null;
