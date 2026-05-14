@@ -586,7 +586,7 @@ export default function App() {
   const {onDragStart,onDragEnter,onDragOver,onDrop,onDragEnd}=useDragList(program,moveDay);
 
   if(!user) return(<><style>{CSS}</style><div className="login">
-    <div className="login-logo">GRIND</div>
+    <div className="login-logo">GymCoach</div>
     <p className="login-tagline">Your free AI personal trainer.<br/>Track. Progress. Never skip leg day.</p>
     <button className="google-btn" onClick={handleLogin}><Ic.Google/> Continue with Google</button>
     <button className="demo-lnk" onClick={handleDemo}>Try without signing in</button>
@@ -605,7 +605,7 @@ export default function App() {
 
     {/* HOME */}
     {tab==="home"&&<>
-      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>Hey {user.name?.split(" ")[0]} 👋</p></div><div className="streak-chip">🔥 {streak}</div></div></div>
+      <div className="phdr"><div className="hdr-row"><div><h1>GymCoach</h1><p>Hey {user.name?.split(" ")[0]} 👋</p></div><div className="streak-chip">🔥 {streak}</div></div></div>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>

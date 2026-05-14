@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Browser } from "@capacitor/browser";
 import { App as CapApp } from "@capacitor/app";
@@ -412,7 +412,7 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .hist-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);}
 .hist-row:last-of-type{border-bottom:none;}
 
-.chat-wrap{display:flex;flex-direction:column;height:calc(100dvh - 56px);overflow:hidden;position:relative;}
+.chat-wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;position:relative;}
 .chat-msgs{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:8px;min-height:0;-webkit-overflow-scrolling:touch;}
 .msg{max-width:86%;}
 .msg.user{align-self:flex-end;}
@@ -523,6 +523,9 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .trk-cal-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--muted2);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;}
 
 @keyframes slideInRight{from{transform:translateX(100%);}to{transform:translateX(0);}}
+.tabs-scroll{display:flex;overflow-x:scroll;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;flex:1;}
+.tabs-scroll::-webkit-scrollbar{display:none;}
+.tab-panel{scroll-snap-align:start;scroll-snap-stop:always;width:var(--tab-w,100%);min-width:var(--tab-w,100%);max-width:var(--tab-w,100%);flex-shrink:0;height:100%;display:flex;flex-direction:column;overflow:hidden;}
 
 .stats-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;flex-direction:column;max-width:430px;margin:0 auto;overflow:hidden;}
 .stats-chart-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
@@ -1530,7 +1533,7 @@ IMPORTANT: This is a program modification request. You MUST respond in exactly t
 <PROGRAM_UPDATE>
 [paste the complete modified program JSON array here, preserving ALL days including rest days, with the same structure: id, label, isRest, exercises with id/name/sets/reps/weight]
 </PROGRAM_UPDATE>`:"";
-      const answerPrompt=`You are GRIND, a personal trainer AI for ${firstName}. Be direct, specific, and data-driven. **Bold** key numbers. Keep replies concise (3-5 sentences unless analysis is requested).${programEditInstructions}
+      const answerPrompt=`You are GymCoach, a personal trainer AI for ${firstName}. Be direct, specific, and data-driven. **Bold** key numbers. Keep replies concise (3-5 sentences unless analysis is requested).${programEditInstructions}
 
 ${ctx}`;
 
@@ -2344,65 +2347,23 @@ export default function App() {
   const [dataLoaded,    setDataLoaded]   = useState(false);
   const [calMode,       setCalMode]      = useState(null);
   const TABS = ["home","workout","tracker","chat","settings"];
-  const stripRef=useRef(null);
-  const tabRef=useRef(tab);
-  tabRef.current=tab;
-  const TW=()=>stripRef.current?.parentElement?.offsetWidth||window.innerWidth;
-  const moveTo=(idx,animate)=>{
-    if(!stripRef.current) return;
-    stripRef.current.style.transition=animate?"transform .35s cubic-bezier(.4,0,.2,1)":"none";
-    stripRef.current.style.transform=`translateX(${-idx*TW()}px)`;
-  };
+  const scrollRef=useRef(null);
   const switchTab=(newTab)=>{
-    if(newTab===tabRef.current) return;
     const idx=TABS.indexOf(newTab);
     setTab(newTab);
-    moveTo(idx,true);
+    if(scrollRef.current){
+      scrollRef.current.scrollTo({left:idx*scrollRef.current.offsetWidth,behavior:"smooth"});
+    }
   };
-  useEffect(()=>{
-    const appEl=document.querySelector(".app");
-    if(!appEl) return;
-    // Snap strip to current tab position after login
-    moveTo(TABS.indexOf(tabRef.current),false);
-    let sx=null,sy=null,dragging=false;
-    const onStart=(e)=>{
-      sx=e.touches[0].clientX; sy=e.touches[0].clientY; dragging=false;
-      if(stripRef.current) stripRef.current.style.transition="none";
-    };
-    const onMove=(e)=>{
-      if(sx===null) return;
-      const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
-      if(!dragging){
-        if(Math.abs(dx)<8&&Math.abs(dy)<8) return;
-        if(Math.abs(dy)>Math.abs(dx)){sx=null;return;}
-        dragging=true;
-      }
-      e.preventDefault();
-      const w=TW();
-      const base=-TABS.indexOf(tabRef.current)*w;
-      const raw=base+dx;
-      const clamped=Math.max(-(TABS.length-1)*w,Math.min(0,raw));
-      if(stripRef.current) stripRef.current.style.transform=`translateX(${clamped}px)`;
-    };
-    const onEnd=(e)=>{
-      if(sx===null||!dragging){sx=null;dragging=false;return;}
-      const dx=e.changedTouches[0].clientX-sx;
-      sx=null;dragging=false;
-      const idx=TABS.indexOf(tabRef.current);
-      let ni=idx;
-      if(dx<-50&&idx<TABS.length-1) ni=idx+1;
-      else if(dx>50&&idx>0) ni=idx-1;
-      setTab(TABS[ni]); tabRef.current=TABS[ni];
-      moveTo(ni,true);
-    };
-    appEl.addEventListener("touchstart",onStart,{passive:true});
-    appEl.addEventListener("touchmove",onMove,{passive:false});
-    appEl.addEventListener("touchend",onEnd,{passive:true});
-    return()=>{
-      appEl.removeEventListener("touchstart",onStart);
-      appEl.removeEventListener("touchmove",onMove);
-      appEl.removeEventListener("touchend",onEnd);
-    };
+  const onTabScroll=()=>{
+    if(!scrollRef.current) return;
+    const idx=Math.round(scrollRef.current.scrollLeft/scrollRef.current.offsetWidth);
+    if(TABS[idx]&&TABS[idx]!==tab) setTab(TABS[idx]);
+  };
+  useLayoutEffect(()=>{
+    if(!scrollRef.current) return;
+    const w=scrollRef.current.offsetWidth;
+    if(w>0) scrollRef.current.style.setProperty("--tab-w",w+"px");
   },[user]);
   const [activeWorkout, setActiveWorkout]= useState(null);
   const [restTimer,     setRestTimer]    = useState(null);
@@ -2412,15 +2373,11 @@ export default function App() {
   const restRef        = useRef(null);
   const saveTimer      = useRef(null);
   const tokenExpired   = useRef(false);
-  const todayCardRef   = useRef(null);
+  const todayCardRef      = useRef(null);
+  const workoutScrollRef  = useRef(null);
 
   useEffect(()=>{if(user)ls.set("gr_user",user);},[user]);
 
-  useEffect(()=>{
-    if(tab==="workout"&&todayCardRef.current){
-      setTimeout(()=>todayCardRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
-    }
-  },[tab]);
 
   // Load all data from Supabase on login
   useEffect(()=>{
@@ -2588,12 +2545,12 @@ export default function App() {
   const {onDragStart,onDragEnter,onDragOver,onDrop,onDragEnd}=useDragList(program,moveDay);
 
   if(!user) return(<><style>{CSS}</style><div className="login">
-    <div className="login-logo">GRIND</div>
+    <div className="login-logo">GymCoach</div>
     <p className="login-tagline">Your free AI personal trainer.<br/>Track. Progress. Never skip leg day.</p>
     <button className="google-btn" onClick={handleLogin}><Ic.Google/> Continue with Google</button>
   </div></>);
 
-  if(!dataLoaded) return(<><style>{CSS}</style><div className="login"><div className="login-logo">GRIND</div><p style={{color:"var(--muted)"}}>Loading your data...</p></div></>);
+  if(!dataLoaded) return(<><style>{CSS}</style><div className="login"><div className="login-logo">GymCoach</div><p style={{color:"var(--muted)"}}>Loading your data...</p></div></>);
 
   const RestTimerUI=()=>(<>
     {restTimer!==null&&!restMinimized&&(
@@ -2622,22 +2579,19 @@ export default function App() {
     <HistoryDetail session={histDetail} program={program} onBack={()=>setHistDetail(null)} onDelete={()=>{setHistory(h=>h.filter(s=>!(s.date===histDetail.date&&s.dayKey===histDetail.dayKey)));setHistDetail(null);}}/>
   </div></>);
 
-  const VW=window.innerWidth;
-  const PANEL={width:VW,minWidth:VW,flexShrink:0,height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"};
   return(<><style>{CSS}</style>{!darkMode&&<style>{LIGHT_CSS}</style>}<div className="app">
 
     <RestTimerUI/>
     {calMode&&<BigCalendar mode={calMode} program={program} history={history} startDate={ls.get("gr_start",null)} trackerGoals={trackerGoals} trackerLogs={trackerLogs} onClose={()=>setCalMode(null)} onSessionClick={s=>{setCalMode(null);setHistDetail(s);}}/>}
-    <div style={{flex:1,overflow:"hidden",minHeight:0}}>
-    <div ref={stripRef} style={{display:"flex",width:VW*TABS.length,height:"100%",willChange:"transform"}}>
+    <div ref={scrollRef} className="tabs-scroll" onScroll={onTabScroll}>
 
-    <div style={PANEL}>{(()=>{
+    <div className="tab-panel">{(()=>{
       const hr=new Date().getHours();
       const grt=hr<12?"Good morning":hr<17?"Good afternoon":hr<21?"Good evening":"Good night";
       const todayStr=new Date().toISOString().slice(0,10);
       const doneToday=history.some(h=>h.date===todayStr&&h.dayKey===todayDay.id&&!todayDay.isRest);
       return(<>
-      <div className="phdr"><div className="hdr-row"><div><h1>GRIND</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
+      <div className="phdr"><div className="hdr-row"><div><h1>GymCoach</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>
@@ -2754,9 +2708,9 @@ export default function App() {
     </>);
     })()}</div>
 
-    <div style={PANEL}><>
+    <div className="tab-panel"><>
       <div className="phdr"><h1>PROGRAM</h1></div>
-      <div className="scroll">
+      <div className="scroll" ref={workoutScrollRef}>
         {program.map((day,i)=>{
           const isT=i===todayIdx;
           const isActive=!day.isRest&&day.exercises.length>0;
@@ -2802,11 +2756,11 @@ export default function App() {
       </div>
     </></div>
 
-    <div style={PANEL}><TrackerTab goals={trackerGoals} setGoals={setTrackerGoals} logs={trackerLogs} setLogs={setTrackerLogs} meals={meals} setMeals={setMeals} onOpenCalendar={()=>setCalMode("tracker")}/></div>
+    <div className="tab-panel"><TrackerTab goals={trackerGoals} setGoals={setTrackerGoals} logs={trackerLogs} setLogs={setTrackerLogs} meals={meals} setMeals={setMeals} onOpenCalendar={()=>setCalMode("tracker")}/></div>
 
-    <div style={PANEL}><TrainerChat history={history} program={program} user={user} chatSessions={chatSessions} onSessionsChange={setChatSessions} onProgramChange={setProgram} trackerGoals={trackerGoals} trackerLogs={trackerLogs} meals={meals} streak={streak} totalSessions={totalSessions}/></div>
+    <div className="tab-panel"><TrainerChat history={history} program={program} user={user} chatSessions={chatSessions} onSessionsChange={setChatSessions} onProgramChange={setProgram} trackerGoals={trackerGoals} trackerLogs={trackerLogs} meals={meals} streak={streak} totalSessions={totalSessions}/></div>
 
-    <div style={PANEL}><>
+    <div className="tab-panel"><>
       <div className="phdr"><h1>SETTINGS</h1></div>
       <div className="scroll">
         <div className="card">
@@ -2838,7 +2792,7 @@ export default function App() {
       </div>
     </></div>
 
-    </div></div>
+    </div>
     <nav className="bnav">{[{id:"home",label:"Home",icon:<Ic.Home/>},{id:"workout",label:"Program",icon:<Ic.Dumbbell/>},{id:"tracker",label:"Track",icon:<Ic.Target/>},{id:"chat",label:"Trainer",icon:<Ic.Chat/>},{id:"settings",label:"Settings",icon:<Ic.Cog/>}].map(n=>(<button key={n.id} className={`nbtn ${tab===n.id?"on":""}`} onClick={()=>switchTab(n.id)}>{n.icon}{n.label}</button>))}</nav>
 
     {editingDay&&<DayEditor day={editingDay} onClose={()=>setEditingDay(null)}
