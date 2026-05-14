@@ -550,12 +550,7 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .nutri-goal-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
 .nutri-goal-row:last-child{border-bottom:none;}
 
-.prog-day-card-today{border-width:2px!important;position:relative;}
-.prog-day-card-today::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:var(--r) 0 0 var(--r);}
-
-.hist-section-toggle{display:flex;background:var(--s2);border-radius:10px;padding:3px;margin-bottom:14px;}
-.hist-section-btn{flex:1;padding:8px;border:none;border-radius:8px;font-family:var(--db);font-size:13px;font-weight:600;cursor:pointer;color:var(--muted2);background:none;transition:all .15s;}
-.hist-section-btn.on{background:var(--s1);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.prog-day-card-today{position:relative;}
 
 .stats-pills-scroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:10px;}
 .stats-pills-scroll::-webkit-scrollbar{display:none;}
@@ -565,6 +560,19 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .hist-card-inner{position:relative;padding-right:40px;}
 .hist-card-del{position:absolute;top:50%;right:-2px;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;opacity:0;transition:opacity .15s;}
 .hist-card:hover .hist-card-del{opacity:1;}
+
+.msg-actions{display:flex;gap:2px;margin-top:4px;padding:0 1px;}
+.msg-action-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:5px 7px;border-radius:7px;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;transition:all .15s;font-family:var(--db);}
+.msg-action-btn:hover{color:var(--muted2);background:rgba(255,255,255,.07);}
+.msg-action-btn.copied{color:var(--green)!important;}
+.msg.user .msg-actions{justify-content:flex-end;opacity:0.35;transition:opacity .15s;}
+.msg.user:hover .msg-actions,.msg.user:focus-within .msg-actions{opacity:1;}
+
+.stats-section-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s;}
+.stats-section-card:hover{border-color:var(--border2);}
+.stats-section-preview{margin-top:10px;pointer-events:none;}
+.stats-expand-caret{color:var(--muted2);transition:transform .2s;display:inline-flex;align-items:center;flex-shrink:0;}
+.stats-expand-caret.open{transform:rotate(180deg);}
 `;
 
 
@@ -586,7 +594,11 @@ const Ic = {
   Target:   ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>,
   Stats:    ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
   Bell:     ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
-  Minimize: ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Minimize:    ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Copy:        ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>,
+  Share:       ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  Refresh:     ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
+  ChevronDown: ()=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>,
 };
 
 function ExerciseSetTable({ ex, sets, editable=false, onTypeSelect, onWeightChange, onRepsChange, onRestChange, onFieldBlur, onSkip, onRemoveSet, onCheck, onAddSet }) {
@@ -895,6 +907,189 @@ function InlineStats({history,program,trackerGoals,trackerLogs}){
         {!selEx&&<p style={{color:"var(--muted)",fontSize:13}}>Tap an exercise to see its progression.</p>}
       </>}
     </div>
+  </div>);
+}
+
+function StatsTab({history,program,trackerGoals,trackerLogs}){
+  const [expanded,setExpanded]=useState(null);
+  const [selEx,setSelEx]=useState(null);
+
+  const wkH=history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest);
+  const totalSessions=wkH.length;
+  const now=new Date();
+  const monthSessions=wkH.filter(h=>{const d=new Date(h.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
+  const bestStreak=calcBestStreak(history,program);
+  const avgDur=totalSessions?Math.round(wkH.reduce((s,h)=>s+(h.duration||0),0)/totalSessions):0;
+  const totalVol=Math.round(history.reduce((s,h)=>s+(h.exercises?.reduce((ss,ex)=>ss+(ex.sets?.reduce((sss,st)=>sss+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0)||0),0)||0),0));
+  const volDisplay=totalVol>999?`${(totalVol/1000).toFixed(1)}t`:`${totalVol}kg`;
+
+  const weeklyData=(()=>{
+    const weeks=[];
+    for(let w=11;w>=0;w--){
+      const s=new Date();s.setDate(s.getDate()-s.getDay()-w*7);s.setHours(0,0,0,0);
+      const e=new Date(s);e.setDate(s.getDate()+7);
+      const n=history.filter(h=>{const d=new Date(h.date);return d>=s&&d<e&&!program.find(p=>p.id===h.dayKey)?.isRest;}).length;
+      weeks.push({v:n,label:w===0?"Now":s.toLocaleDateString("en",{month:"short",day:"numeric"}).slice(0,3),today:w===0});
+    }
+    return weeks;
+  })();
+
+  const volData=wkH.slice(-20).map(h=>h.exercises?.reduce((s,ex)=>s+(ex.sets?.reduce((ss,st)=>ss+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0)||0),0)||0);
+  const exOpts=program.flatMap(d=>d.exercises||[]).filter(ex=>history.some(h=>h.exercises?.find(e=>e.id===ex.id)));
+  const exData=selEx?(()=>{
+    const ss=history.filter(h=>h.exercises?.find(e=>e.id===selEx.id));
+    return ss.slice(-16).map(h=>{const ex=h.exercises?.find(e=>e.id===selEx.id);return Math.max(0,...(ex?.sets?.map(s=>parseFloat(s.weight)||0)||[]));});
+  })():null;
+  const bwData=(()=>{
+    const g=trackerGoals?.find(x=>x.id==="weight");
+    if(!g)return null;
+    const pts=(trackerLogs||[]).slice(-20).map(l=>parseFloat(l.entries?.weight)||null).filter(Boolean);
+    return pts.length>=2?pts:null;
+  })();
+
+  const tog=(k)=>setExpanded(e=>e===k?null:k);
+  const miniIconStyle=(bg)=>({width:36,height:36,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0});
+  const miniStat=(label,val)=>(
+    <div style={{background:"var(--s2)",borderRadius:8,padding:"8px 10px"}}>
+      <div style={{fontSize:9,color:"var(--muted2)",letterSpacing:.6,textTransform:"uppercase",marginBottom:2}}>{label}</div>
+      <div style={{fontWeight:700,fontSize:16}}>{val}</div>
+    </div>
+  );
+
+  if(totalSessions===0) return(
+    <div style={{textAlign:"center",padding:"40px 20px"}}>
+      <div style={{fontSize:48,marginBottom:14}}>📊</div>
+      <div style={{fontWeight:700,fontSize:16,marginBottom:6}}>No data yet</div>
+      <div style={{fontSize:13,color:"var(--muted2)",lineHeight:1.8}}>Complete your first workout<br/>to start seeing stats here.</div>
+    </div>
+  );
+
+  return(<div>
+      {/* Top summary grid */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        <div className="stat-card" style={{gridColumn:"span 2",display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"14px 16px"}}>
+          <div><div className="stat-lbl">TOTAL SESSIONS</div><div className="stat-num">{totalSessions}</div></div>
+          <div style={{textAlign:"right"}}><div className="stat-lbl">THIS MONTH</div><div className="stat-num" style={{fontSize:28}}>{monthSessions}</div></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-lbl">BEST STREAK</div>
+          <div className="stat-num" style={{fontSize:26}}>{bestStreak}</div>
+          <div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>days 🔥</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-lbl">AVG SESSION</div>
+          <div className="stat-num" style={{fontSize:26}}>{avgDur}</div>
+          <div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>min</div>
+        </div>
+        <div className="stat-card" style={{gridColumn:"span 2",padding:"12px 14px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div><div className="stat-lbl">TOTAL VOLUME LIFTED</div><div className="stat-num" style={{fontSize:26}}>{volDisplay}</div></div>
+            {volData.length>=3&&<div style={{width:90,flexShrink:0}}><MiniLineChart data={volData.slice(-8)} color="var(--accent)" height={40}/></div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Weekly Activity */}
+      <div className="stats-section-card" onClick={()=>tog("weekly")}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={miniIconStyle("rgba(255,100,50,.12)")}>📅</div>
+            <div><div style={{fontWeight:700,fontSize:14}}>Weekly Activity</div><div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>Last 12 weeks</div></div>
+          </div>
+          <span className={`stats-expand-caret${expanded==="weekly"?" open":""}`}><Ic.ChevronDown/></span>
+        </div>
+        {expanded!=="weekly"&&<div className="stats-section-preview"><BarChart data={weeklyData.slice(-6)} color="var(--accent)" height={44}/></div>}
+        {expanded==="weekly"&&<div style={{marginTop:14}} onClick={e=>e.stopPropagation()}>
+          <BarChart data={weeklyData} color="var(--accent)" height={80}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10}}>
+            {miniStat("Best Week",`${Math.max(...weeklyData.map(w=>w.v))} sessions`)}
+            {miniStat("Weekly Avg",`${weeklyData.length?Math.round((weeklyData.reduce((s,w)=>s+w.v,0)/weeklyData.length)*10)/10:0} sessions`)}
+          </div>
+        </div>}
+      </div>
+
+      {/* Volume Trend */}
+      {volData.length>=2&&<div className="stats-section-card" onClick={()=>tog("volume")}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={miniIconStyle("rgba(78,205,196,.12)")}>📈</div>
+            <div><div style={{fontWeight:700,fontSize:14}}>Volume Trend</div><div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>kg lifted per session</div></div>
+          </div>
+          <span className={`stats-expand-caret${expanded==="volume"?" open":""}`}><Ic.ChevronDown/></span>
+        </div>
+        {expanded!=="volume"&&<div className="stats-section-preview"><MiniLineChart data={volData.slice(-6)} color="var(--accent)" height={44}/></div>}
+        {expanded==="volume"&&<div style={{marginTop:14}} onClick={e=>e.stopPropagation()}>
+          <MiniLineChart data={volData} color="var(--accent)" height={80}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}}>
+            {miniStat("Min",`${Math.round(Math.min(...volData))}kg`)}
+            {miniStat("Avg",`${Math.round(volData.reduce((s,v)=>s+v,0)/volData.length)}kg`)}
+            <div style={{background:"var(--s2)",borderRadius:8,padding:"8px 10px"}}>
+              <div style={{fontSize:9,color:"var(--muted2)",letterSpacing:.6,textTransform:"uppercase",marginBottom:2}}>Peak</div>
+              <div style={{fontWeight:700,fontSize:16,color:"var(--accent2)"}}>{Math.round(Math.max(...volData))}kg</div>
+            </div>
+          </div>
+        </div>}
+      </div>}
+
+      {/* Exercise Progress */}
+      {exOpts.length>0&&<div className="stats-section-card" onClick={()=>tog("exercise")}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={miniIconStyle("rgba(199,125,255,.12)")}>💪</div>
+            <div><div style={{fontWeight:700,fontSize:14}}>Exercise Progress</div><div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{exOpts.length} exercises tracked</div></div>
+          </div>
+          <span className={`stats-expand-caret${expanded==="exercise"?" open":""}`}><Ic.ChevronDown/></span>
+        </div>
+        {expanded!=="exercise"&&selEx&&exData&&exData.length>=2&&<div className="stats-section-preview"><MiniLineChart data={exData.slice(-6)} color={program.find(d=>d.exercises?.find(e=>e.id===selEx.id))?.color||"var(--accent)"} height={44}/></div>}
+        {expanded==="exercise"&&<div style={{marginTop:14}} onClick={e=>e.stopPropagation()}>
+          <div className="stats-pills-scroll">
+            {exOpts.map(ex=>(
+              <button key={ex.id} className={`stats-ex-pill${selEx?.id===ex.id?" on":""}`} onClick={e=>{e.stopPropagation();setSelEx(prev=>prev?.id===ex.id?null:ex);}}>{ex.name}</button>
+            ))}
+          </div>
+          {selEx&&exData&&exData.length>=2&&(()=>{
+            const col=program.find(d=>d.exercises?.find(e=>e.id===selEx.id))?.color||"var(--accent)";
+            return(<>
+              <MiniLineChart data={exData} color={col} height={90}/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}}>
+                {miniStat("Start",`${exData[0]}kg`)}
+                {miniStat("Current",`${exData[exData.length-1]}kg`)}
+                <div style={{background:"var(--s2)",borderRadius:8,padding:"8px 10px"}}>
+                  <div style={{fontSize:9,color:col,letterSpacing:.6,textTransform:"uppercase",marginBottom:2}}>Gain</div>
+                  <div style={{fontWeight:700,fontSize:16,color:col}}>+{(Math.max(...exData)-Math.min(...exData)).toFixed(1)}kg</div>
+                </div>
+              </div>
+            </>);
+          })()}
+          {selEx&&exData&&exData.length<2&&<p style={{color:"var(--muted)",fontSize:13,marginTop:8}}>Need 2+ sessions with {selEx.name}.</p>}
+          {!selEx&&<p style={{color:"var(--muted)",fontSize:13}}>Tap an exercise above to see its weight progression.</p>}
+        </div>}
+      </div>}
+
+      {/* Body Weight */}
+      {bwData&&<div className="stats-section-card" onClick={()=>tog("bw")}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={miniIconStyle("rgba(100,150,255,.12)")}>⚖️</div>
+            <div><div style={{fontWeight:700,fontSize:14}}>Body Weight</div><div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{bwData.length} measurements</div></div>
+          </div>
+          <span className={`stats-expand-caret${expanded==="bw"?" open":""}`}><Ic.ChevronDown/></span>
+        </div>
+        {expanded!=="bw"&&<div className="stats-section-preview"><MiniLineChart data={bwData.slice(-6)} color="#C77DFF" height={44}/></div>}
+        {expanded==="bw"&&<div style={{marginTop:14}} onClick={e=>e.stopPropagation()}>
+          <MiniLineChart data={bwData} color="#C77DFF" height={80}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}}>
+            {miniStat("Start",`${bwData[0]}kg`)}
+            {miniStat("Current",`${bwData[bwData.length-1]}kg`)}
+            <div style={{background:"var(--s2)",borderRadius:8,padding:"8px 10px"}}>
+              <div style={{fontSize:9,color:"var(--muted2)",letterSpacing:.6,textTransform:"uppercase",marginBottom:2}}>Change</div>
+              <div style={{fontWeight:700,fontSize:16,color:(bwData[bwData.length-1]-bwData[0])<=0?"#4CAF50":"#e24b4a"}}>
+                {(bwData[bwData.length-1]-bwData[0])>=0?"+":""}{(bwData[bwData.length-1]-bwData[0]).toFixed(1)}kg
+              </div>
+            </div>
+          </div>
+        </div>}
+      </div>}
   </div>);
 }
 
@@ -1216,6 +1411,7 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   const [editingIdx,setEditingIdx]=useState(null);
   const [editingText,setEditingText]=useState("");
   const [pastInput,setPastInput]=useState("");
+  const [copiedIdx,setCopiedIdx]=useState(null);
   const bottomRef=useRef(null);
   const inputRef=useRef(null);
 
@@ -1226,8 +1422,11 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   useEffect(()=>{
     if(msgs.filter(m=>m.role==="user").length===0)return;
     const title=msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat";
-    const session={id:sessionId.current,date:new Date().toISOString(),title,msgs};
-    setSessions(prev=>[session,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
+    setSessions(prev=>{
+      const existing=prev.find(s=>s.id===sessionId.current);
+      const session={id:sessionId.current,date:new Date().toISOString(),title,msgs,...(existing?.nextId?{nextId:existing.nextId}:{})};
+      return[session,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50);
+    });
   },[msgs]);
 
   const acceptProposal=(msgIdx)=>{
@@ -1239,18 +1438,32 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   const dismissProposal=(msgIdx)=>{
     setMsgs(m=>m.map((x,i)=>i===msgIdx?{...x,proposal:{...x.proposal,status:"dismissed"}}:x));
   };
+  const copyMsg=(idx,text)=>{
+    navigator.clipboard?.writeText(text).catch(()=>{});
+    setCopiedIdx(idx);
+    setTimeout(()=>setCopiedIdx(i=>i===idx?null:i),2000);
+  };
+  const shareMsg=(text)=>{
+    if(navigator.share){navigator.share({text}).catch(()=>{});}
+    else{navigator.clipboard?.writeText(text).catch(()=>{});}
+  };
+  const regenerate=()=>{
+    const lastAiIdx=[...msgs].map((m,i)=>m.role==="ai"?i:-1).filter(i=>i>=0).pop();
+    if(lastAiIdx===undefined||lastAiIdx<0)return;
+    const lastUserIdx=[...msgs].slice(0,lastAiIdx).map((m,i)=>m.role==="user"?i:-1).filter(i=>i>=0).pop();
+    if(lastUserIdx===undefined||lastUserIdx<0)return;
+    const userMsg=msgs[lastUserIdx];
+    const msgsBeforeUser=msgs.slice(0,lastUserIdx);
+    setMsgs([...msgsBeforeUser,{role:"user",text:userMsg.text,time:userMsg.time}]);
+    send(userMsg.text,msgsBeforeUser);
+  };
   const submitEdit=(idx)=>{
     const newText=editingText.trim();
     if(!newText){setEditingIdx(null);return;}
     const msgsUpToEdit=msgs.slice(0,idx);
-    const branchId=Date.now().toString();
-    const oldSession={id:sessionId.current,date:new Date().toISOString(),title:msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat",msgs,nextId:branchId};
-    setSessions(prev=>[oldSession,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
-    sessionId.current=branchId;
     setEditingIdx(null);
-    setMsgs([...msgsUpToEdit,{role:"user",text:newText,time:nowT(),branched:true}]);
-    setLoading(true);
-    send(newText,[...msgsUpToEdit]);
+    setMsgs([...msgsUpToEdit,{role:"user",text:newText,time:nowT()}]);
+    send(newText,msgsUpToEdit);
   };
 
   const send=async(textOverride,msgHistoryOverride)=>{
@@ -1342,11 +1555,6 @@ ${ctx}`;
   };
 
   const deleteSession=(id)=>{setSessions(prev=>prev.filter(s=>s.id!==id));if(viewingId===id)setView("history");};
-  const continueSession=(s)=>{
-    sessionId.current=s.id;
-    setMsgs(s.msgs);
-    setView("chat");
-  };
 
   if(view==="history"){
     const past=sessions.filter(s=>s.id!==sessionId.current);
@@ -1378,7 +1586,10 @@ ${ctx}`;
       const text=pastInput.trim();
       if(!text||!past)return;
       setPastInput("");
-      continueSession(past);
+      const userMsg={role:"user",text,time:nowT()};
+      sessionId.current=past.id;
+      setMsgs([...past.msgs,userMsg]);
+      setView("chat");
       send(text,past.msgs);
     };
     return(
@@ -1468,9 +1679,14 @@ ${ctx}`;
                 <div className="msg ai">
                   <div className="msg-row">
                     <div className="ai-avatar">AI</div>
-                    <div>
+                    <div style={{flex:1,minWidth:0}}>
                       <div className="bubble"><RenderMessage text={m.text}/></div>
                       <div className="msg-time">{m.time}</div>
+                      <div className="msg-actions">
+                        <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/>{copiedIdx===i&&<span>Copied</span>}</button>
+                        {!msgs.slice(i+1).some(x=>x.role==="ai")&&!loading&&<button className="msg-action-btn" onClick={e=>{e.stopPropagation();regenerate();}}><Ic.Refresh/>Regen</button>}
+                        <button className="msg-action-btn" onClick={e=>{e.stopPropagation();shareMsg(m.text);}}><Ic.Share/></button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1486,9 +1702,11 @@ ${ctx}`;
                     </div>
                   ):(
                     <>
-                      <div style={{display:"flex",alignItems:"flex-end",gap:6,justifyContent:"flex-end"}}>
-                        {!loading&&<button className="edit-msg-btn" onClick={()=>{setEditingIdx(i);setEditingText(m.text);}}><Ic.Edit/></button>}
-                        <div className="bubble">{m.text}{m.branched&&<span className="branch-badge">edited</span>}</div>
+                      <div className="bubble">{m.text}</div>
+                      <div className="msg-actions">
+                        <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/></button>
+                        {!loading&&<button className="msg-action-btn" onClick={e=>{e.stopPropagation();setEditingIdx(i);setEditingText(m.text);}}><Ic.Edit/></button>}
+                        <button className="msg-action-btn" onClick={e=>{e.stopPropagation();shareMsg(m.text);}}><Ic.Share/></button>
                       </div>
                       <div className="msg-time" style={{textAlign:"right"}}>{m.time}</div>
                     </>
@@ -2115,7 +2333,6 @@ export default function App() {
   const [activeWorkout, setActiveWorkout]= useState(null);
   const [restTimer,     setRestTimer]    = useState(null);
   const [restMinimized, setRestMinimized]= useState(false);
-  const [homeSection,   setHomeSection]  = useState("history");
   const [editingDay,    setEditingDay]   = useState(null);
   const [histDetail,    setHistDetail]   = useState(null);
   const restRef        = useRef(null);
@@ -2391,31 +2608,30 @@ export default function App() {
         </div>
         <MiniCalendar program={program} history={history} todayIdx={todayIdx} startDate={ls.get("gr_start",null)} onExpand={()=>setCalMode("workout")}/>
         <div>
-          <div className="hist-section-toggle">
-            <button className={`hist-section-btn${homeSection==="history"?" on":""}`} onClick={()=>setHomeSection("history")}>History</button>
-            <button className={`hist-section-btn${homeSection==="stats"?" on":""}`} onClick={()=>setHomeSection("stats")}>Statistics</button>
-          </div>
-          {homeSection==="history"&&(
-            history.length===0
-              ? <p style={{fontSize:13,color:"var(--muted)",textAlign:"center",padding:"20px 0"}}>No sessions logged yet.</p>
-              : [...history].reverse().map((s,i)=>{
-                  const day=program.find(d=>d.id===s.dayKey);
-                  return(
-                    <div key={i} className="hist-card" onClick={()=>setHistDetail(s)} style={{margin:"0 0 8px",padding:"10px 12px"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div>
-                          <div style={{fontWeight:600,fontSize:13,color:day?.color}}>{day?.label??s.dayKey}</div>
-                          <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>
-                            {new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} &bull; {s.duration}min{s.exercises?.length?` · ${s.exercises.length} ex`:""}
-                          </div>
+          <div className="ctitle">RECENT WORKOUTS</div>
+          {history.length===0
+            ? <p style={{fontSize:13,color:"var(--muted)",textAlign:"center",padding:"20px 0"}}>No sessions logged yet.</p>
+            : [...history].reverse().map((s,i)=>{
+                const day=program.find(d=>d.id===s.dayKey);
+                return(
+                  <div key={i} className="hist-card" onClick={()=>setHistDetail(s)} style={{margin:"0 0 8px",padding:"10px 12px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div>
+                        <div style={{fontWeight:600,fontSize:13,color:day?.color}}>{day?.label??s.dayKey}</div>
+                        <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>
+                          {new Date(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} &bull; {s.duration}min{s.exercises?.length?` · ${s.exercises.length} ex`:""}
                         </div>
-                        <div style={{fontSize:14,color:"var(--muted)"}}>&#8250;</div>
                       </div>
+                      <div style={{fontSize:14,color:"var(--muted)"}}>&#8250;</div>
                     </div>
-                  );
-                })
-          )}
-          {homeSection==="stats"&&<InlineStats history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs}/>}
+                  </div>
+                );
+              })
+          }
+        </div>
+        <div className="card" style={{marginTop:4}}>
+          <div className="ctitle">STATISTICS</div>
+          <StatsTab history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs}/>
         </div>
       </div>
     </>);
@@ -2432,7 +2648,7 @@ export default function App() {
           const estMins=day.exercises.length?Math.round(totalSets*2.2+totalSets*avgRest/60):0;
           const lastDone=[...history].reverse().find(h=>h.dayKey===day.id);
           const lastDoneLabel=lastDone?new Date(lastDone.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):null;
-          return(<div key={day.id} ref={isT?todayCardRef:undefined} className={`prog-day-card${isT?" prog-day-card-today":""}`} style={{borderColor:isT?day.color:undefined,background:isT?`${day.color}0c`:undefined}}
+          return(<div key={day.id} ref={isT?todayCardRef:undefined} className={`prog-day-card${isT?" prog-day-card-today":""}`} style={{borderLeft:isT?`3px solid ${day.color}`:undefined,background:isT?`${day.color}0c`:undefined}}
             draggable onDragStart={e=>onDragStart(e,i)} onDragEnter={e=>onDragEnter(e,i)} onDragOver={onDragOver} onDrop={e=>onDrop(e,i)} onDragEnd={onDragEnd}>
             <div className="prog-day-header">
               <div className="drag-handle"><Ic.Grip/></div>
