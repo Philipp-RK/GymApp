@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Browser } from "@capacitor/browser";
+import { App as CapApp } from "@capacitor/app";
 
 function getSetLabel(sets, si) {
   const t = sets[si]?.setType ?? "normal";
@@ -2430,12 +2432,41 @@ export default function App() {
     const params=new URLSearchParams(hash.slice(1));
     const token=params.get("access_token");
     if(!token) return;
+    const state=params.get("state");
     window.history.replaceState(null,"",window.location.pathname);
+    if(state==="capacitor"){
+      // Running in Chrome Custom Tab after Android OAuth — redirect to deep link so the app can catch it
+      window.location.href=`com.grind.app://auth#access_token=${encodeURIComponent(token)}`;
+      return;
+    }
     fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:`Bearer ${token}`}})
       .then(r=>r.json()).then(info=>{
         if(!ls.get("gr_start",null)) ls.set("gr_start",new Date().toISOString());
         setUser({name:info.name,email:info.email,picture:info.picture,accessToken:token});
       }).catch(()=>{});
+  },[]);
+
+  useEffect(()=>{
+    if(!window.Capacitor?.isNativePlatform?.()) return;
+    const extractToken=(url)=>{
+      if(!url?.startsWith("com.grind.app://auth")) return null;
+      const hi=url.indexOf("#");
+      if(hi===-1) return null;
+      const p=new URLSearchParams(url.slice(hi+1));
+      return decodeURIComponent(p.get("access_token")||"")||null;
+    };
+    const handleToken=(token)=>{
+      Browser.close().catch(()=>{});
+      fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:`Bearer ${token}`}})
+        .then(r=>r.json()).then(info=>{
+          if(!ls.get("gr_start",null)) ls.set("gr_start",new Date().toISOString());
+          setUser({name:info.name,email:info.email,picture:info.picture,accessToken:token});
+        }).catch(()=>{});
+    };
+    // Handle fresh launch from deep link
+    CapApp.getLaunchUrl().then(({url})=>{ const t=extractToken(url); if(t) handleToken(t); }).catch(()=>{});
+    const listenerP=CapApp.addListener("appUrlOpen",(data)=>{ const t=extractToken(data.url); if(t) handleToken(t); });
+    return()=>{ listenerP.then(l=>l.remove()).catch(()=>{}); };
   },[]);
 
   const startDate=ls.get("gr_start",null);
@@ -2488,13 +2519,20 @@ export default function App() {
   const moveDay=(arr)=>setProgram(arr);
 
   const handleDemo=()=>{ if(!ls.get("gr_start",null))ls.set("gr_start",new Date().toISOString()); setUser({name:"Demo User",email:"demo@example.com",demo:true}); };
-  const handleLogin=()=>{
+  const handleLogin=async()=>{
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if(!clientId){ handleDemo(); return; }
-    const redirect = window.location.origin;
-    const scope = encodeURIComponent("openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar");
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&prompt=select_account`;
-    window.location.href = url;
+    const scope = encodeURIComponent("openid email profile");
+    const isNative = window.Capacitor?.isNativePlatform?.();
+    if(isNative){
+      const redirect = "https://gym-app-tau-vert.vercel.app";
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&state=capacitor&prompt=select_account`;
+      await Browser.open({ url });
+    } else {
+      const redirect = window.location.origin;
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&prompt=select_account`;
+      window.location.href = url;
+    }
   };
   const handleConnectSheets=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); try{ const r=await fetch("/api/sheets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"create",accessToken:user.accessToken})}); const d=await r.json(); if(d.spreadsheetId){setSheetId(d.spreadsheetId);alert("Google Sheet created!");} }catch{alert("Error.");} };
   const handleCalendar=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); const r=await fetch("/api/calendar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accessToken:user.accessToken,startDate:ls.get("gr_start",new Date().toISOString())})}); const d=await r.json(); if(d.ok)alert(`${d.eventsCreated} calendar reminders added!`); };

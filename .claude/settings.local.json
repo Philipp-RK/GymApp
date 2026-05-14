@@ -8,7 +8,9 @@
       "Bash(npx vite *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Philipp\\\\GymApp\" -Recurse -Force)",
       "Bash(Select-Object FullName)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Philipp\\\\GymApp\" -Recurse | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('C:\\\\Users\\\\Philipp\\\\GymApp\\\\', ''\\) })"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Philipp\\\\GymApp\" -Recurse | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('C:\\\\Users\\\\Philipp\\\\GymApp\\\\', ''\\) })",
+      "Bash(npm install *)",
+      "Bash(npx cap *)"
     ]
   }
 }
