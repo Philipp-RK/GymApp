@@ -142,12 +142,10 @@ function calcBestStreak(history, program) {
   return best;
 }
 
-const THEMES = [
-  { id:"orange", label:"Orange", accent:"#FF4D1C", accent2:"#FF7A50", rgb:"255,77,28"   },
-  { id:"blue",   label:"Blue",   accent:"#3B82F6", accent2:"#60a5fa", rgb:"59,130,246"  },
-  { id:"green",  label:"Green",  accent:"#22C55E", accent2:"#4ade80", rgb:"34,197,94"   },
-  { id:"violet", label:"Violet", accent:"#7c3aed", accent2:"#a78bfa", rgb:"124,58,237"  },
-];
+const LIGHT_CSS=`:root{--bg:#f4f4f5;--s1:#ffffff;--s2:#ececec;--s3:#e0e0e0;--border:#d8d8d8;--border2:#c8c8c8;--text:#111111;--muted:#9a9a9a;--muted2:#666666;--green:#16a34a;--gbg:#f0fdf4;--gborder:#86efac;--shadow:0 2px 12px rgba(0,0,0,.1);}
+input[type=date],input[type=text],input[type=number]{color-scheme:light;}
+.bnav{background:rgba(244,244,245,.96);}`;
+
 
 function useDragList(items, setItems) {
   const dragIdx = useRef(null);
@@ -522,10 +520,10 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .step-btn:hover{color:var(--text);}
 .trk-cal-btn{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--muted2);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;}
 
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-6%);}to{opacity:1;transform:translateX(0);}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(6%);}to{opacity:1;transform:translateX(0);}}
-.tab-slide-left{animation:slideInLeft .18s cubic-bezier(.4,0,.2,1) both;}
-.tab-slide-right{animation:slideInRight .18s cubic-bezier(.4,0,.2,1) both;}
+@keyframes slideInLeft{from{transform:translateX(-100%);}to{transform:translateX(0);}}
+@keyframes slideInRight{from{transform:translateX(100%);}to{transform:translateX(0);}}
+.tab-slide-left{animation:slideInLeft .3s cubic-bezier(.25,0,.25,1) both;}
+.tab-slide-right{animation:slideInRight .3s cubic-bezier(.25,0,.25,1) both;}
 
 .stats-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;flex-direction:column;max-width:430px;margin:0 auto;overflow:hidden;}
 .stats-chart-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
@@ -1461,8 +1459,12 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
     const newText=editingText.trim();
     if(!newText){setEditingIdx(null);return;}
     const msgsUpToEdit=msgs.slice(0,idx);
+    const branchId=Date.now().toString();
+    const oldSession={id:sessionId.current,date:new Date().toISOString(),title:msgs.find(m=>m.role==="user")?.text?.slice(0,60)??"Chat",msgs,nextId:branchId};
+    setSessions(prev=>[oldSession,...prev.filter(s=>s.id!==sessionId.current)].slice(0,50));
+    sessionId.current=branchId;
     setEditingIdx(null);
-    setMsgs([...msgsUpToEdit,{role:"user",text:newText,time:nowT()}]);
+    setMsgs([...msgsUpToEdit,{role:"user",text:newText,time:nowT(),branched:true}]);
     send(newText,msgsUpToEdit);
   };
 
@@ -1555,6 +1557,17 @@ ${ctx}`;
   };
 
   const deleteSession=(id)=>{setSessions(prev=>prev.filter(s=>s.id!==id));if(viewingId===id)setView("history");};
+  const branchChain=(()=>{
+    let rootId=sessionId.current;
+    const visited=new Set();
+    while(!visited.has(rootId)){visited.add(rootId);const prev=sessions.find(s=>s.nextId===rootId);if(prev)rootId=prev.id;else break;}
+    const chain=[];const seen=new Set();let cur=sessions.find(s=>s.id===rootId);
+    while(cur&&!seen.has(cur.id)){seen.add(cur.id);chain.push(cur);cur=cur.nextId?sessions.find(s=>s.id===cur.nextId):null;}
+    return chain;
+  })();
+  const branchIdx=branchChain.findIndex(s=>s.id===sessionId.current);
+  const hasBranches=branchChain.length>1&&branchIdx>=0;
+  const loadBranch=(session)=>{if(!session)return;sessionId.current=session.id;setMsgs(session.msgs);setEditingIdx(null);};
 
   if(view==="history"){
     const past=sessions.filter(s=>s.id!==sessionId.current);
@@ -1610,10 +1623,29 @@ ${ctx}`;
         <div className="chat-msgs" style={{flex:1}}>
           {(past?.msgs??[]).map((m,i)=>(
             <div key={i} className={`msg ${m.role}`}>
-              {m.role==="ai"
-                ?<div className="msg-row"><div className="ai-avatar">AI</div><div><div className="bubble"><RenderMessage text={m.text}/></div><div className="msg-time">{m.time}</div></div></div>
-                :<><div className="bubble">{m.text}</div><div className="msg-time" style={{textAlign:"right"}}>{m.time}</div></>
-              }
+              {m.role==="ai"?(
+                <div className="msg-row">
+                  <div className="ai-avatar">AI</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="bubble"><RenderMessage text={m.text}/></div>
+                    <div className="msg-time">{m.time}</div>
+                    <div className="msg-actions">
+                      <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/>{copiedIdx===i&&<span>Copied</span>}</button>
+                      <button className="msg-action-btn" onClick={e=>{e.stopPropagation();shareMsg(m.text);}}><Ic.Share/></button>
+                    </div>
+                  </div>
+                </div>
+              ):(
+                <>
+                  <div className="bubble">{m.text}</div>
+                  <div className="msg-actions">
+                    <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/></button>
+                    <button className="msg-action-btn" onClick={e=>{e.stopPropagation();sessionId.current=past.id;setMsgs(past.msgs);setView("chat");setEditingIdx(i);setEditingText(m.text);}}><Ic.Edit/></button>
+                    <button className="msg-action-btn" onClick={e=>{e.stopPropagation();shareMsg(m.text);}}><Ic.Share/></button>
+                  </div>
+                  <div className="msg-time" style={{textAlign:"right"}}>{m.time}</div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -1673,7 +1705,7 @@ ${ctx}`;
         </div>
       ):(
         <div className="chat-msgs">
-          {msgs.map((m,i)=>(
+          {msgs.map((m,i)=>{const showBranchNav=hasBranches&&m.role==="user"&&m.branched;return(
             <div key={i} style={{display:"contents"}}>
               {m.role==="ai"?(
                 <div className="msg ai">
@@ -1684,7 +1716,7 @@ ${ctx}`;
                       <div className="msg-time">{m.time}</div>
                       <div className="msg-actions">
                         <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/>{copiedIdx===i&&<span>Copied</span>}</button>
-                        {!msgs.slice(i+1).some(x=>x.role==="ai")&&!loading&&<button className="msg-action-btn" onClick={e=>{e.stopPropagation();regenerate();}}><Ic.Refresh/>Regen</button>}
+                        {!msgs.slice(i+1).some(x=>x.role==="ai")&&!loading&&<button className="msg-action-btn" onClick={e=>{e.stopPropagation();regenerate();}}><Ic.Refresh/></button>}
                         <button className="msg-action-btn" onClick={e=>{e.stopPropagation();shareMsg(m.text);}}><Ic.Share/></button>
                       </div>
                     </div>
@@ -1702,11 +1734,16 @@ ${ctx}`;
                     </div>
                   ):(
                     <>
-                      <div className="bubble">{m.text}</div>
+                      <div className="bubble">{m.text}{m.branched&&<span className="branch-badge">edited</span>}</div>
                       <div className="msg-actions">
                         <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/></button>
                         {!loading&&<button className="msg-action-btn" onClick={e=>{e.stopPropagation();setEditingIdx(i);setEditingText(m.text);}}><Ic.Edit/></button>}
                         <button className="msg-action-btn" onClick={e=>{e.stopPropagation();shareMsg(m.text);}}><Ic.Share/></button>
+                        {showBranchNav&&<>
+                          <button className="msg-action-btn" onClick={e=>{e.stopPropagation();loadBranch(branchChain[branchIdx-1]);}} style={{opacity:branchIdx===0?.3:1,fontSize:15,padding:"2px 5px"}} disabled={branchIdx===0}>‹</button>
+                          <span style={{fontSize:11,color:"var(--muted2)",padding:"0 1px",lineHeight:1,display:"flex",alignItems:"center"}}>{branchIdx+1}/{branchChain.length}</span>
+                          <button className="msg-action-btn" onClick={e=>{e.stopPropagation();loadBranch(branchChain[branchIdx+1]);}} style={{opacity:branchIdx===branchChain.length-1?.3:1,fontSize:15,padding:"2px 5px"}} disabled={branchIdx===branchChain.length-1}>›</button>
+                        </>}
                       </div>
                       <div className="msg-time" style={{textAlign:"right"}}>{m.time}</div>
                     </>
@@ -1738,7 +1775,7 @@ ${ctx}`;
                 </div>
               )}
             </div>
-          ))}
+          );})}
           {loading&&(
             <div className="msg ai">
               <div className="msg-row">
@@ -2318,7 +2355,7 @@ export default function App() {
     setTab(newTab);
     setTabAnim(dir);
     clearTimeout(tabAnimTimer.current);
-    tabAnimTimer.current=setTimeout(()=>setTabAnim(null),250);
+    tabAnimTimer.current=setTimeout(()=>setTabAnim(null),300);
   };
   const onSwipeStart = e => { swipeRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY}; };
   const onSwipeEnd = e => {
@@ -2462,9 +2499,7 @@ export default function App() {
   const handleConnectSheets=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); try{ const r=await fetch("/api/sheets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"create",accessToken:user.accessToken})}); const d=await r.json(); if(d.spreadsheetId){setSheetId(d.spreadsheetId);alert("Google Sheet created!");} }catch{alert("Error.");} };
   const handleCalendar=async()=>{ if(!user?.accessToken)return alert("Sign in with Google first."); const r=await fetch("/api/calendar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accessToken:user.accessToken,startDate:ls.get("gr_start",new Date().toISOString())})}); const d=await r.json(); if(d.ok)alert(`${d.eventsCreated} calendar reminders added!`); };
 
-  const [theme, setTheme] = useState(()=>ls.get("gr_theme","orange"));
-  const themeObj = THEMES.find(t=>t.id===theme)||THEMES[0];
-  const themeCSS = theme==="orange" ? "" : `:root{--accent:${themeObj.accent};--accent2:${themeObj.accent2};--accent-rgb:${themeObj.rgb};}`;
+  const [darkMode, setDarkMode] = useState(()=>ls.get("gr_dark",true));
 
   const totalSessions=history.filter(h=>!program.find(d=>d.id===h.dayKey)?.isRest).length;
   const weekStart=new Date(); weekStart.setDate(weekStart.getDate()-todayIdx); weekStart.setHours(0,0,0,0);
@@ -2508,7 +2543,7 @@ export default function App() {
     <HistoryDetail session={histDetail} program={program} onBack={()=>setHistDetail(null)} onDelete={()=>{setHistory(h=>h.filter(s=>!(s.date===histDetail.date&&s.dayKey===histDetail.dayKey)));setHistDetail(null);}}/>
   </div></>);
 
-  return(<><style>{CSS}</style>{themeCSS&&<style>{themeCSS}</style>}<div className="app" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+  return(<><style>{CSS}</style>{!darkMode&&<style>{LIGHT_CSS}</style>}<div className="app" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
     <RestTimerUI/>
     {calMode&&<BigCalendar mode={calMode} program={program} history={history} startDate={ls.get("gr_start",null)} trackerGoals={trackerGoals} trackerLogs={trackerLogs} onClose={()=>setCalMode(null)} onSessionClick={s=>{setCalMode(null);setHistDetail(s);}}/>}
@@ -2648,7 +2683,7 @@ export default function App() {
           const estMins=day.exercises.length?Math.round(totalSets*2.2+totalSets*avgRest/60):0;
           const lastDone=[...history].reverse().find(h=>h.dayKey===day.id);
           const lastDoneLabel=lastDone?new Date(lastDone.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):null;
-          return(<div key={day.id} ref={isT?todayCardRef:undefined} className={`prog-day-card${isT?" prog-day-card-today":""}`} style={{borderLeft:isT?`3px solid ${day.color}`:undefined,background:isT?`${day.color}0c`:undefined}}
+          return(<div key={day.id} ref={isT?todayCardRef:undefined} className={`prog-day-card${isT?" prog-day-card-today":""}`} style={{...(isT?{border:`2px solid ${day.color}`,background:`${day.color}0c`}:{})}}
             draggable onDragStart={e=>onDragStart(e,i)} onDragEnter={e=>onDragEnter(e,i)} onDragOver={onDragOver} onDrop={e=>onDrop(e,i)} onDragEnd={onDragEnd}>
             <div className="prog-day-header">
               <div className="drag-handle"><Ic.Grip/></div>
@@ -2707,23 +2742,14 @@ export default function App() {
         </div>
         <div className="card">
           <div className="ctitle" style={{fontSize:14}}>APPEARANCE</div>
-          <div className="slbl" style={{marginBottom:10}}>Color theme</div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            {THEMES.map(t=>(
-              <button key={t.id} onClick={()=>{setTheme(t.id);ls.set("gr_theme",t.id);}}
-                style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,background:theme===t.id?"var(--s3)":"var(--s2)",border:theme===t.id?"1.5px solid var(--accent2)":"1px solid var(--border2)",borderRadius:12,padding:"10px 14px",cursor:"pointer",minWidth:64,transition:"all .15s"}}>
-                <div style={{width:28,height:28,borderRadius:"50%",background:`linear-gradient(135deg,${t.accent},${t.accent2})`,boxShadow:theme===t.id?`0 0 10px ${t.accent}88`:"none"}}/>
-                <span style={{fontSize:11,fontWeight:700,color:theme===t.id?"var(--accent2)":"var(--muted2)"}}>{t.label}</span>
-              </button>
-            ))}
-          </div>
+          <div className="srow"><div><div className="slbl">Dark mode</div><div className="ssub">Switch between dark and light theme</div></div><button className={`tog ${darkMode?"on":""}`} onClick={()=>{const next=!darkMode;setDarkMode(next);ls.set("gr_dark",next);}}/></div>
         </div>
         <div className="card"><div className="ctitle" style={{fontSize:14}}>WORKOUT</div>
           <div className="srow"><div><div className="slbl">Rest timer between sets</div><div className="ssub">Countdown after each set</div></div><button className={`tog ${restEnabled?"on":""}`} onClick={()=>setRestEnabled(v=>!v)}/></div>
           <div className="srow"><div><div className="slbl">Schedule start date</div><div className="ssub">First day of your program cycle</div></div><input type="date" defaultValue={ls.get("gr_start","")?.slice(0,10)} onChange={e=>ls.set("gr_start",new Date(e.target.value).toISOString())} style={{background:"var(--s2)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text)",padding:"6px 8px",fontSize:13}}/></div>
         </div>
         <div className="card"><div className="ctitle" style={{fontSize:14}}>DATA</div>
-          <div className="srow"><div><div className="slbl">Export all data</div><div className="ssub">Download as JSON file</div></div><button className="btn-ghost" onClick={()=>{const blob=new Blob([JSON.stringify({history,program,trackerGoals,trackerLogs,meals},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="grind-data.json";a.click();URL.revokeObjectURL(url);}}>Export</button></div>
+
           <div className="srow"><div><div className="slbl">Clear all history</div><div className="ssub">Cannot be undone</div></div><button className="btn-danger" onClick={()=>{if(window.confirm("Delete all history?"))setHistory([]);}}>Clear</button></div>
           <div className="srow"><div><div className="slbl">Reset program to default</div></div><button className="btn-danger" onClick={()=>{if(window.confirm("Reset program?"))setProgram(DEFAULT_PROGRAM);}}>Reset</button></div>
         </div>
