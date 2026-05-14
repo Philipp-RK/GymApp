@@ -2491,7 +2491,7 @@ export default function App() {
   const handleLogin=()=>{
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if(!clientId){ handleDemo(); return; }
-    const redirect = window.location.hostname==="localhost" ? "http://localhost" : window.location.origin;
+    const redirect = window.location.origin;
     const scope = encodeURIComponent("openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar");
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}&prompt=select_account`;
     window.location.href = url;

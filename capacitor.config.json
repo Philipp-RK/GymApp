@@ -1,5 +1,9 @@
 {
   "appId": "com.grind.app",
   "appName": "GRIND",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://gym-app-tau-vert.vercel.app",
+    "cleartext": true
+  }
 }
