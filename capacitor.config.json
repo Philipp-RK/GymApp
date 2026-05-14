@@ -2,8 +2,11 @@
   "appId": "com.grind.app",
   "appName": "GRIND",
   "webDir": "dist",
-  "server": {
-    "url": "https://gym-app-tau-vert.vercel.app",
-    "cleartext": true
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["openid", "email", "profile", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/calendar"],
+      "clientId": "702351680326-ebfqo6s9ftk98896uimcesktph6rlah8.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
   }
 }
