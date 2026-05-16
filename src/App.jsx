@@ -581,6 +581,14 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .stats-section-preview{margin-top:10px;pointer-events:none;}
 .stats-expand-caret{color:var(--muted2);transition:transform .2s;display:inline-flex;align-items:center;flex-shrink:0;}
 .stats-expand-caret.open{transform:rotate(180deg);}
+.goal-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.goal-row:last-child{border-bottom:none;}
+.goal-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);background:var(--s2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s;}
+.goal-check.checked{background:var(--green);border-color:var(--green);}
+.goal-pts{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;background:var(--s3);color:var(--muted2);border:1px solid var(--border);white-space:nowrap;flex-shrink:0;}
+.goal-pts.earned{background:rgba(var(--accent-rgb),.12);color:var(--accent2);border-color:rgba(var(--accent-rgb),.3);}
+.home-sub-tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.6px;border:none;background:none;cursor:pointer;color:var(--muted2);border-bottom:2px solid transparent;transition:all .15s;font-family:var(--db);text-transform:uppercase;}
+.home-sub-tab.on{color:var(--accent);border-bottom-color:var(--accent);}
 `;
 
 
@@ -2358,6 +2366,323 @@ function TrackerTab({ goals, setGoals, logs, setLogs, meals, setMeals, onOpenCal
   </>);
 }
 
+function isGoalActiveOn(g, date = new Date()) {
+  if (!g.active) return false;
+  if (g.repeat === "daily") return true;
+  if (g.repeat === "weekly") return g.weekDays?.includes(date.getDay());
+  if (g.repeat === "monthly") return date.getDate() === (g.monthDay || 1);
+  if (g.repeat === "once") return new Date(g.createdAt).toISOString().slice(0,10) === date.toISOString().slice(0,10);
+  return false;
+}
+
+const GOAL_PALETTE = ["#FF6B35","#4ECDC4","#C77DFF","#FFD166","#4CAF50","#f59e0b","#a78bfa","#ee6b6e","#06b6d4","#f43f5e"];
+const GOAL_EMOJIS  = ["🎯","🏃","💧","📚","🧘","🥗","💤","🚴","🎮","📝","🛁","🎵"];
+
+function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, program, todayIdx }) {
+  const today = new Date().toISOString().slice(0,10);
+  const todayLog = goalLogs.find(l=>l.date===today) || {completions:{}};
+  const completions = todayLog.completions || {};
+
+  const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const BLANK = {title:"",points:5,repeat:"daily",weekDays:[1,2,3,4,5],monthDay:1,color:GOAL_PALETTE[0],emoji:""};
+  const [form, setForm] = useState(BLANK);
+  const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+  const todayGoals = goalDefs.filter(g=>isGoalActiveOn(g));
+  const todayDay = program[todayIdx];
+  const todayExercises = todayDay?.isRest ? [] : (todayDay?.exercises||[]);
+
+  const isExDoneToday = (exId) => history.some(h => {
+    if (new Date(h.date).toISOString().slice(0,10) !== today) return false;
+    const ex = h.exercises?.find(e=>e.id===exId);
+    return ex && !ex.skipped && ex.sets?.some(s=>!s.skipped&&(s.done||s.reps));
+  });
+
+  const setCompletion = (id, done) => {
+    setGoalLogs(prev => {
+      const i = prev.findIndex(l=>l.date===today);
+      const c = {...(i>=0?prev[i].completions:{}), [id]: done};
+      if (!done) delete c[id];
+      if (i>=0) { const u=[...prev]; u[i]={...u[i],completions:c}; return u; }
+      return [...prev,{date:today,completions:c}];
+    });
+  };
+  const toggle = (id) => setCompletion(id, !completions[id]);
+
+  const customEarned    = todayGoals.filter(g=>completions[g.id]).reduce((s,g)=>s+g.points,0);
+  const customPotential = todayGoals.reduce((s,g)=>s+g.points,0);
+  const exEarned    = todayExercises.filter(ex=>isExDoneToday(ex.id)).length;
+  const exPotential = todayExercises.length;
+  const earned    = customEarned + exEarned;
+  const potential = customPotential + exPotential;
+  const pct = potential > 0 ? Math.min(100, Math.round((earned/potential)*100)) : 0;
+
+  const weekPts = (() => {
+    const days = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);});
+    const customPts = goalLogs.filter(l=>days.includes(l.date)).reduce((s,l)=>
+      s+Object.entries(l.completions||{}).filter(([,v])=>v).reduce((ss,[k])=>ss+(goalDefs.find(g=>g.id===k)?.points||0),0), 0);
+    const workoutPts = history.filter(h=>days.includes(new Date(h.date).toISOString().slice(0,10))).reduce((s,h)=>
+      s+(h.exercises?.filter(ex=>!ex.skipped&&ex.sets?.some(st=>!st.skipped&&(st.done||st.reps))).length||0), 0);
+    return customPts + workoutPts;
+  })();
+
+  const getGoalStreak = (goalId) => {
+    let s = 0;
+    for (let i = 0; i < 60; i++) {
+      const d=new Date(); d.setDate(d.getDate()-i);
+      const g = goalDefs.find(x=>x.id===goalId);
+      if (g && !isGoalActiveOn(g, d)) continue;
+      const log = goalLogs.find(l=>l.date===d.toISOString().slice(0,10));
+      if (log?.completions?.[goalId]) s++; else break;
+    }
+    return s;
+  };
+
+  const openAdd = () => {
+    setForm({...BLANK, color: GOAL_PALETTE[goalDefs.length % GOAL_PALETTE.length]});
+    setEditing(null);
+    setShowAdd(true);
+  };
+  const openEdit = (g) => {
+    setForm({title:g.title,points:g.points,repeat:g.repeat,weekDays:g.weekDays||[1,2,3,4,5],monthDay:g.monthDay||1,color:g.color||GOAL_PALETTE[0],emoji:g.emoji||""});
+    setEditing(g.id);
+    setShowAdd(true);
+  };
+  const saveGoal = () => {
+    if (!form.title.trim()) return;
+    if (editing) {
+      setGoalDefs(gs=>gs.map(g=>g.id===editing?{...g,...form,title:form.title.trim()}:g));
+    } else {
+      setGoalDefs(gs=>[...gs,{id:uid(),active:true,createdAt:new Date().toISOString(),...form,title:form.title.trim()}]);
+    }
+    setShowAdd(false);
+  };
+  const deleteGoal = () => { setGoalDefs(gs=>gs.filter(g=>g.id!==editing)); setShowAdd(false); };
+
+  // On-open notification check (runs when Goals tab mounts)
+  useEffect(()=>{
+    const hr = new Date().getHours();
+    const todayStr = new Date().toISOString().slice(0,10);
+    if (hr >= 6 && hr < 10) {
+      const k = `gr_mnotif_${todayStr}`;
+      if (!ls.get(k,false) && Notification?.permission==="granted") {
+        new Notification("GymCoach 💪",{body:"Check your goals for today!"});
+        ls.set(k, true);
+      }
+    }
+    if (hr >= 21) {
+      const k = `gr_enotif_${todayStr}`;
+      const inc = goalDefs.filter(g=>isGoalActiveOn(g)&&!completions[g.id]).length + todayExercises.filter(ex=>!isExDoneToday(ex.id)).length;
+      if (!ls.get(k,false) && inc > 0 && Notification?.permission==="granted") {
+        new Notification("GymCoach 🎯",{body:`${inc} goal${inc>1?"s":""} left today — finish strong!`});
+        ls.set(k, true);
+      }
+    }
+  },[]);
+
+  const allDone = potential > 0 && earned >= potential;
+
+  return (
+    <div className="scroll">
+      {/* Points widget */}
+      <div style={{display:"flex",alignItems:"center",gap:16,background:"var(--s1)",borderRadius:"var(--r)",padding:16,marginBottom:12,border:"1px solid var(--border)"}}>
+        <div style={{position:"relative",width:68,height:68,flexShrink:0}}>
+          <svg viewBox="0 0 68 68" style={{transform:"rotate(-90deg)",width:68,height:68}}>
+            <circle cx="34" cy="34" r="28" fill="none" stroke="var(--s3)" strokeWidth="6"/>
+            <circle cx="34" cy="34" r="28" fill="none" stroke={allDone?"var(--green)":"var(--accent)"} strokeWidth="6"
+              strokeDasharray={`${2*Math.PI*28}`}
+              strokeDashoffset={`${2*Math.PI*28*(1-pct/100)}`}
+              strokeLinecap="round" style={{transition:"stroke-dashoffset .5s"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:15,color:allDone?"var(--green)":"var(--accent2)"}}>{pct}%</div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:800,fontSize:28,letterSpacing:-.5,lineHeight:1}}>{earned}<span style={{fontSize:14,fontWeight:400,color:"var(--muted2)"}}> / {potential} pts</span></div>
+          <div style={{fontSize:13,color:"var(--muted2)",marginTop:4}}>
+            {allDone ? "🎉 All goals complete!" : `${potential-earned} pt${potential-earned!==1?"s":""} left today`}
+          </div>
+          {weekPts>0&&<div style={{fontSize:11,color:"var(--accent2)",marginTop:5,fontWeight:600}}>+{weekPts} pts this week</div>}
+        </div>
+        <div>
+          {Notification?.permission!=="granted"&&(
+            <button className="btn-ghost" style={{fontSize:11,padding:"5px 10px"}} onClick={()=>requestNotificationPermission()}>🔔 Enable</button>
+          )}
+        </div>
+      </div>
+
+      {/* Today's goals */}
+      <div className="card" style={{marginBottom:12}}>
+        <div className="section-header">
+          <div className="ctitle" style={{marginBottom:0}}>TODAY'S GOALS</div>
+          <button className="add-mini-btn" onClick={openAdd}>+ Add</button>
+        </div>
+        {todayGoals.length===0&&todayExercises.length===0&&(
+          <p style={{color:"var(--muted)",fontSize:13,textAlign:"center",padding:"20px 0"}}>No goals yet. Tap "+ Add" to create one.</p>
+        )}
+        {todayGoals.map((g,gi)=>{
+          const done = !!completions[g.id];
+          const streak = getGoalStreak(g.id);
+          return(
+            <div key={g.id} className="goal-row" style={{borderBottom:gi<todayGoals.length-1||todayExercises.length>0?"1px solid var(--border)":"none"}}>
+              <button className={`goal-check${done?" checked":""}`} onClick={()=>toggle(g.id)}>
+                {done&&<svg viewBox="0 0 10 8" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="1,4 4,7 9,1"/></svg>}
+              </button>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:500,fontSize:14,textDecoration:done?"line-through":"none",color:done?"var(--muted2)":"var(--text)",display:"flex",alignItems:"center",gap:6}}>
+                  {g.emoji&&<span>{g.emoji}</span>}
+                  {g.title}
+                  {streak>=2&&<span style={{fontSize:9,fontWeight:700,background:g.color+"22",color:g.color,padding:"1px 6px",borderRadius:10}}>🔥{streak}d</span>}
+                </div>
+                <div style={{fontSize:11,color:"var(--muted2)",marginTop:2,textTransform:"capitalize"}}>{g.repeat==="weekly"?`Weekly (${(g.weekDays||[]).map(d=>DOW[d]).join(", ")})`:g.repeat}</div>
+              </div>
+              <div className={`goal-pts${done?" earned":""}`}>{g.points}pt</div>
+              <button className="btn-icon" style={{padding:4,flexShrink:0}} onClick={()=>openEdit(g)}><Ic.Edit/></button>
+            </div>
+          );
+        })}
+        {todayExercises.length>0&&(<>
+          {todayGoals.length>0&&<div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"var(--muted)",textTransform:"uppercase",padding:"10px 0 6px",borderTop:"1px solid var(--border)"}}>{todayDay?.label} — 1 PT PER EXERCISE</div>}
+          {todayGoals.length===0&&<div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"var(--muted)",textTransform:"uppercase",paddingBottom:8}}>{todayDay?.label} — 1 PT PER EXERCISE</div>}
+          {todayExercises.map((ex,ei)=>{
+            const done = isExDoneToday(ex.id);
+            return(
+              <div key={ex.id} className="goal-row" style={{borderBottom:ei<todayExercises.length-1?"1px solid var(--border)":"none"}}>
+                <div className={`goal-check${done?" checked":""}`} style={{cursor:"default"}}>
+                  {done&&<svg viewBox="0 0 10 8" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="1,4 4,7 9,1"/></svg>}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:500,fontSize:14,color:done?"var(--muted2)":"var(--text)",textDecoration:done?"line-through":"none"}}>{ex.name}</div>
+                  <div style={{fontSize:11,color:"var(--muted2)",marginTop:2}}>auto • {ex.sets}×{ex.reps}</div>
+                </div>
+                <div className={`goal-pts${done?" earned":""}`}>1pt</div>
+              </div>
+            );
+          })}
+        </>)}
+      </div>
+
+      {/* All goal definitions */}
+      {goalDefs.length>0&&(
+        <div className="card" style={{marginBottom:12}}>
+          <div className="ctitle">ALL GOALS</div>
+          {goalDefs.map((g,gi)=>(
+            <div key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:gi<goalDefs.length-1?"1px solid var(--border)":"none"}}>
+              <div style={{width:9,height:9,borderRadius:"50%",background:g.color||"var(--accent)",flexShrink:0}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:500,fontSize:13}}>{g.emoji&&`${g.emoji} `}{g.title}</div>
+                <div style={{fontSize:11,color:"var(--muted2)",marginTop:1,textTransform:"capitalize"}}>
+                  {g.repeat==="weekly"?`${(g.weekDays||[]).map(d=>DOW[d]).join(", ")}`:g.repeat} · {g.points}pt{g.points!==1?"s":""}
+                </div>
+              </div>
+              <button className="btn-icon" style={{padding:4}} onClick={()=>openEdit(g)}><Ic.Edit/></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Notification help */}
+      {Notification?.permission==="denied"&&(
+        <div style={{background:"var(--s2)",borderRadius:"var(--r)",padding:14,marginBottom:12,border:"1px solid var(--border)",fontSize:12,color:"var(--muted2)",lineHeight:1.6}}>
+          🔔 Notifications blocked. Enable them in your device settings for 6am morning reminders and 9pm goal nudges.
+        </div>
+      )}
+
+      {/* Add/Edit modal */}
+      {showAdd&&(
+        <div className="modal-overlay" onClick={()=>setShowAdd(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title-row">
+              <div className="modal-title">{editing?"EDIT GOAL":"ADD GOAL"}</div>
+              <button onClick={()=>setShowAdd(false)} style={{background:"var(--s2)",border:"1px solid var(--border2)",borderRadius:8,width:32,height:32,cursor:"pointer",color:"var(--text)",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            </div>
+            <div style={{marginBottom:12}}>
+              <div className="form-lbl">Goal title</div>
+              <input className="form-input" placeholder="e.g. Morning run" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&saveGoal()} autoFocus/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              <div>
+                <div className="form-lbl">Emoji</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:4}}>
+                  {GOAL_EMOJIS.map(em=>(
+                    <button key={em} onClick={()=>setForm(f=>({...f,emoji:f.emoji===em?"":em}))}
+                      style={{width:30,height:30,borderRadius:7,fontSize:15,cursor:"pointer",border:"1px solid",transition:"all .1s",
+                        borderColor:form.emoji===em?"var(--accent)":"var(--border)",
+                        background:form.emoji===em?"rgba(var(--accent-rgb),.12)":"var(--s3)"}}>
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="form-lbl">Points</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+                  <button className="step-btn" onClick={()=>setForm(f=>({...f,points:Math.max(1,f.points-1)}))}>−</button>
+                  <input type="number" className="form-input" value={form.points} onChange={e=>setForm(f=>({...f,points:Math.max(1,parseInt(e.target.value)||1)}))} style={{textAlign:"center",padding:"8px 4px"}}/>
+                  <button className="step-btn" onClick={()=>setForm(f=>({...f,points:Math.min(100,f.points+1)}))}>+</button>
+                </div>
+              </div>
+            </div>
+            <div style={{marginBottom:12}}>
+              <div className="form-lbl">Repeat</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
+                {["daily","weekly","monthly","once"].map(r=>(
+                  <button key={r} onClick={()=>setForm(f=>({...f,repeat:r}))}
+                    style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid",textTransform:"capitalize",transition:"all .15s",
+                      borderColor:form.repeat===r?"var(--accent)":"var(--border2)",
+                      background:form.repeat===r?"rgba(var(--accent-rgb),.12)":"var(--s3)",
+                      color:form.repeat===r?"var(--accent2)":"var(--muted2)"}}>
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {form.repeat==="weekly"&&(
+              <div style={{marginBottom:12}}>
+                <div className="form-lbl">Days</div>
+                <div style={{display:"flex",gap:4,marginTop:4}}>
+                  {DOW.map((d,i)=>(
+                    <button key={i} onClick={()=>setForm(f=>({...f,weekDays:f.weekDays?.includes(i)?f.weekDays.filter(x=>x!==i):[...(f.weekDays||[]),i].sort()}))}
+                      style={{flex:1,padding:"7px 0",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:"1px solid",transition:"all .1s",
+                        borderColor:form.weekDays?.includes(i)?"var(--accent)":"var(--border2)",
+                        background:form.weekDays?.includes(i)?"rgba(var(--accent-rgb),.12)":"var(--s3)",
+                        color:form.weekDays?.includes(i)?"var(--accent2)":"var(--muted2)"}}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {form.repeat==="monthly"&&(
+              <div style={{marginBottom:12}}>
+                <div className="form-lbl">Day of month</div>
+                <input className="form-input" type="number" min="1" max="31" value={form.monthDay} onChange={e=>setForm(f=>({...f,monthDay:Math.min(31,Math.max(1,parseInt(e.target.value)||1))}))} style={{marginTop:4}}/>
+              </div>
+            )}
+            <div style={{marginBottom:16}}>
+              <div className="form-lbl">Color</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}>
+                {GOAL_PALETTE.map(c=>(
+                  <div key={c} onClick={()=>setForm(f=>({...f,color:c}))}
+                    style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",flexShrink:0,transition:"box-shadow .15s",
+                      boxShadow:form.color===c?`0 0 0 2px var(--s1), 0 0 0 4px ${c}`:""}}/>
+                ))}
+              </div>
+            </div>
+            <button className="btn-accent" onClick={saveGoal}>SAVE GOAL</button>
+            {editing&&(
+              <div style={{display:"flex",gap:8,marginTop:8}}>
+                <button style={{flex:1,padding:12,background:"none",border:"none",color:"var(--muted2)",cursor:"pointer",fontFamily:"var(--db)"}} onClick={()=>setShowAdd(false)}>Cancel</button>
+                <button style={{padding:"12px 20px",background:"#200d0d",border:"1px solid #4a1010",borderRadius:"var(--r)",color:"#cc6666",cursor:"pointer",fontFamily:"var(--db)",fontSize:13}} onClick={deleteGoal}>Delete</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [user,          setUser]         = useState(()=>ls.get("gr_user",null));
   const [tab,           setTab]          = useState("home");
@@ -2370,6 +2695,9 @@ export default function App() {
   const [trackerLogs,   setTrackerLogs]  = useState([]);
   const [meals,         setMeals]        = useState(DEFAULT_MEALS);
   const [dataLoaded,    setDataLoaded]   = useState(false);
+  const [goalDefs,      setGoalDefs]     = useState([]);
+  const [goalLogs,      setGoalLogs]     = useState([]);
+  const [homeSubTab,    setHomeSubTab]   = useState("overview");
   const [calMode,       setCalMode]      = useState(null);
   const TABS = ["home","workout","tracker","chat","settings"];
   const scrollRef=useRef(null);
@@ -2429,6 +2757,8 @@ export default function App() {
         if(d.tracker_logs)    setTrackerLogs(d.tracker_logs);
         if(d.meals?.length)   setMeals(d.meals);
         if(d.start_date)      ls.set("gr_start",d.start_date);
+        if(d.goal_defs)       setGoalDefs(d.goal_defs);
+        if(d.goal_logs)       setGoalLogs(d.goal_logs);
         setDataLoaded(true);
       })
       .catch(()=>setDataLoaded(true));
@@ -2451,6 +2781,7 @@ export default function App() {
   useEffect(()=>{ dbSave("chats",     {chat_sessions:chatSessions}); },[chatSessions,dataLoaded]);
   useEffect(()=>{ dbSave("settings",  {rest_enabled:restEnabled,sheet_id:sheetId}); },[restEnabled,sheetId,dataLoaded]);
   useEffect(()=>{ dbSave("track",     {tracker_goals:trackerGoals,tracker_logs:trackerLogs,meals}); },[trackerGoals,trackerLogs,meals,dataLoaded]);
+  useEffect(()=>{ dbSave("goals",     {goal_defs:goalDefs,goal_logs:goalLogs}); },[goalDefs,goalLogs,dataLoaded]);
 
   useEffect(()=>{
     const hash=window.location.hash;
@@ -2626,6 +2957,11 @@ export default function App() {
       const doneToday=history.some(h=>h.date===todayStr&&h.dayKey===todayDay.id&&!todayDay.isRest);
       return(<>
       <div className="phdr"><div className="hdr-row"><div><h1>GymCoach</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
+      <div style={{display:"flex",background:"var(--s1)",borderBottom:"1px solid var(--border)",flexShrink:0}}>
+        <button className={`home-sub-tab${homeSubTab==="overview"?" on":""}`} onClick={()=>setHomeSubTab("overview")}>Overview</button>
+        <button className={`home-sub-tab${homeSubTab==="goals"?" on":""}`} onClick={()=>setHomeSubTab("goals")}>Goals & Points</button>
+      </div>
+      {homeSubTab==="overview"&&<>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>
@@ -2739,6 +3075,8 @@ export default function App() {
           <StatsTab history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs}/>
         </div>
       </div>
+      </>}
+      {homeSubTab==="goals"&&<GoalsTab goalDefs={goalDefs} setGoalDefs={setGoalDefs} goalLogs={goalLogs} setGoalLogs={setGoalLogs} history={history} program={program} todayIdx={todayIdx}/>}
     </>);
     })()}</div>
 

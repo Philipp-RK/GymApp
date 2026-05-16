@@ -45,13 +45,14 @@ export default async function handler(req, res) {
     });
 
   if (action === "load") {
-    const [settings, program, statistics, chats, track, home] = await Promise.all([
+    const [settings, program, statistics, chats, track, home, goals] = await Promise.all([
       sbGet("settings"),
       sbGet("program"),
       sbGet("statistics"),
       sbGet("chats"),
       sbGet("track"),
       sbGet("home"),
+      sbGet("goals"),
     ]);
     return res.status(200).json({
       program:       program?.program       ?? null,
@@ -63,6 +64,8 @@ export default async function handler(req, res) {
       tracker_logs:  track?.tracker_logs    ?? [],
       meals:         track?.meals           ?? [],
       start_date:    home?.start_date       ?? null,
+      goal_defs:     goals?.goal_defs       ?? [],
+      goal_logs:     goals?.goal_logs       ?? [],
     });
   }
 
@@ -73,6 +76,7 @@ export default async function handler(req, res) {
     chats:      ["chat_sessions"],
     track:      ["tracker_goals", "tracker_logs", "meals"],
     home:       ["start_date"],
+    goals:      ["goal_defs", "goal_logs"],
   };
 
   if (action === "save") {
