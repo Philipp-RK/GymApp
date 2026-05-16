@@ -1,7 +1,20 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, Component } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Browser } from "@capacitor/browser";
 import { App as CapApp } from "@capacitor/app";
+
+class ErrorBoundary extends Component {
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(err){return{err};}
+  render(){
+    if(this.state.err) return(
+      <div style={{padding:16,color:"var(--muted2)",fontSize:12,background:"var(--s2)",borderRadius:"var(--r)",margin:12,border:"1px solid var(--border)"}}>
+        ⚠️ Section failed to load. <button style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:12,padding:0}} onClick={()=>this.setState({err:null})}>Retry</button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
 function getSetLabel(sets, si) {
   const t = sets[si]?.setType ?? "normal";
@@ -2394,7 +2407,7 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
   const todayExercises = todayDay?.isRest ? [] : (todayDay?.exercises||[]);
 
   const isExDoneToday = (exId) => history.some(h => {
-    if (new Date(h.date).toISOString().slice(0,10) !== today) return false;
+    try{ if (new Date(h.date).toISOString().slice(0,10) !== today) return false; }catch{ return false; }
     const ex = h.exercises?.find(e=>e.id===exId);
     return ex && !ex.skipped && ex.sets?.some(s=>!s.skipped&&(s.done||s.reps));
   });
@@ -2422,7 +2435,7 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
     const days = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);});
     const customPts = goalLogs.filter(l=>days.includes(l.date)).reduce((s,l)=>
       s+Object.entries(l.completions||{}).filter(([,v])=>v).reduce((ss,[k])=>ss+(goalDefs.find(g=>g.id===k)?.points||0),0), 0);
-    const workoutPts = history.filter(h=>days.includes(new Date(h.date).toISOString().slice(0,10))).reduce((s,h)=>
+    const workoutPts = history.filter(h=>{try{return days.includes(new Date(h.date).toISOString().slice(0,10));}catch{return false;}}).reduce((s,h)=>
       s+(h.exercises?.filter(ex=>!ex.skipped&&ex.sets?.some(st=>!st.skipped&&(st.done||st.reps))).length||0), 0);
     return customPts + workoutPts;
   })();
@@ -2962,7 +2975,7 @@ export default function App() {
           <div className="stat-card"><div className="stat-lbl">This week</div><div className="stat-num">{thisWeek}</div></div>
           <div className="stat-card"><div className="stat-lbl">Best streak</div><div className="stat-num">{bestStreak}</div></div>
         </div>
-        <GoalsTab goalDefs={goalDefs} setGoalDefs={setGoalDefs} goalLogs={goalLogs} setGoalLogs={setGoalLogs} history={history} program={program} todayIdx={todayIdx}/>
+        <ErrorBoundary><GoalsTab goalDefs={goalDefs} setGoalDefs={setGoalDefs} goalLogs={goalLogs} setGoalLogs={setGoalLogs} history={history} program={program} todayIdx={todayIdx}/></ErrorBoundary>
         {(()=>{
           const td=new Date().toISOString().slice(0,10);
           const tLog=trackerLogs.find(l=>l.date===td)||{entries:{}};
