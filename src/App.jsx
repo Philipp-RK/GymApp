@@ -2484,7 +2484,7 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
   const allDone = potential > 0 && earned >= potential;
 
   return (
-    <div className="scroll">
+    <>
       {/* Points widget */}
       <div style={{display:"flex",alignItems:"center",gap:16,background:"var(--s1)",borderRadius:"var(--r)",padding:16,marginBottom:12,border:"1px solid var(--border)"}}>
         <div style={{position:"relative",width:68,height:68,flexShrink:0}}>
@@ -2679,7 +2679,7 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -2697,7 +2697,6 @@ export default function App() {
   const [dataLoaded,    setDataLoaded]   = useState(false);
   const [goalDefs,      setGoalDefs]     = useState([]);
   const [goalLogs,      setGoalLogs]     = useState([]);
-  const [homeSubTab,    setHomeSubTab]   = useState("overview");
   const [calMode,       setCalMode]      = useState(null);
   const TABS = ["home","workout","tracker","chat","settings"];
   const scrollRef=useRef(null);
@@ -2957,17 +2956,13 @@ export default function App() {
       const doneToday=history.some(h=>h.date===todayStr&&h.dayKey===todayDay.id&&!todayDay.isRest);
       return(<>
       <div className="phdr"><div className="hdr-row"><div><h1>GymCoach</h1><p>{grt}, {user.name?.split(" ")[0]}!</p></div><div style={{display:"flex",gap:8}}><button className="streak-chip" onClick={()=>setCalMode("streak")} style={{cursor:"pointer",background:"var(--s2)",border:"1px solid var(--border2)"}}>&#x1F525; {streak}</button></div></div></div>
-      <div style={{display:"flex",background:"var(--s1)",borderBottom:"1px solid var(--border)",flexShrink:0}}>
-        <button className={`home-sub-tab${homeSubTab==="overview"?" on":""}`} onClick={()=>setHomeSubTab("overview")}>Overview</button>
-        <button className={`home-sub-tab${homeSubTab==="goals"?" on":""}`} onClick={()=>setHomeSubTab("goals")}>Goals & Points</button>
-      </div>
-      {homeSubTab==="overview"&&<>
       <div className="scroll">
         <div className="stats-row">
           <div className="stat-card"><div className="stat-lbl">Total sessions</div><div className="stat-num">{totalSessions}</div></div>
           <div className="stat-card"><div className="stat-lbl">This week</div><div className="stat-num">{thisWeek}</div></div>
           <div className="stat-card"><div className="stat-lbl">Best streak</div><div className="stat-num">{bestStreak}</div></div>
         </div>
+        <GoalsTab goalDefs={goalDefs} setGoalDefs={setGoalDefs} goalLogs={goalLogs} setGoalLogs={setGoalLogs} history={history} program={program} todayIdx={todayIdx}/>
         {(()=>{
           const td=new Date().toISOString().slice(0,10);
           const tLog=trackerLogs.find(l=>l.date===td)||{entries:{}};
@@ -3075,8 +3070,6 @@ export default function App() {
           <StatsTab history={history} program={program} trackerGoals={trackerGoals} trackerLogs={trackerLogs}/>
         </div>
       </div>
-      </>}
-      {homeSubTab==="goals"&&<GoalsTab goalDefs={goalDefs} setGoalDefs={setGoalDefs} goalLogs={goalLogs} setGoalLogs={setGoalLogs} history={history} program={program} todayIdx={todayIdx}/>}
     </>);
     })()}</div>
 
