@@ -12,11 +12,24 @@ export default async function handler(req, res) {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_API_KEY) return res.status(500).json({ error: "Groq API key not configured" });
 
+  const hasImage = messages.some(m => m.image);
   const groqMessages = [];
   if (systemPrompt) groqMessages.push({ role: "system", content: systemPrompt });
   for (const m of messages) {
-    groqMessages.push({ role: m.role === "ai" ? "assistant" : "user", content: m.text });
+    const role = m.role === "ai" ? "assistant" : "user";
+    if (m.image && role === "user") {
+      groqMessages.push({ role, content: [
+        ...(m.text ? [{ type: "text", text: m.text }] : []),
+        { type: "image_url", image_url: { url: m.image } },
+      ]});
+    } else {
+      groqMessages.push({ role, content: m.text || "" });
+    }
   }
+
+  const model = hasImage
+    ? (process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct")
+    : (process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile");
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -26,7 +39,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
+        model,
         messages: groqMessages,
         max_tokens: maxTokens ?? 800,
         temperature: 0.7,

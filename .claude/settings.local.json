@@ -10,7 +10,9 @@
       "Bash(Select-Object FullName)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Philipp\\\\GymApp\" -Recurse | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('C:\\\\Users\\\\Philipp\\\\GymApp\\\\', ''\\) })",
       "Bash(npm install *)",
-      "Bash(npx cap *)"
+      "Bash(npx cap *)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Philipp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Philipp-GymApp\\\\0494f097-fc05-4fc0-944d-1397684eabfe\\\\tasks\\\\b7vwqicvx.output\")"
     ]
   }
 }

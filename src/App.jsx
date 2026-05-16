@@ -422,6 +422,13 @@ input[type=date],input[type=text],input[type=number]{color-scheme:dark;}
 .msg.ai .bubble{background:var(--s2);border:1px solid var(--border);border-bottom-left-radius:4px;}
 .msg-time{font-size:10px;color:var(--muted);margin-top:3px;padding:0 3px;}
 .chat-bar{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);min-height:64px;}
+.attach-btn{width:36px;height:36px;min-width:36px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted2);font-size:22px;line-height:1;padding:0;flex-shrink:0;transition:all .15s;}
+.attach-btn:active{opacity:.7;}
+.img-preview-wrap{flex-shrink:0;padding:8px 14px 0;display:flex;background:var(--s1);}
+.img-preview-thumb{position:relative;display:inline-flex;}
+.img-preview-thumb img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--border2);}
+.img-preview-rm{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:var(--text);line-height:1;padding:0;}
+.msg-img{max-width:220px;border-radius:12px;display:block;margin-bottom:4px;}
 .chat-in{flex:1;background:var(--s2);border:1.5px solid var(--muted2);border-radius:22px;color:var(--text);-webkit-text-fill-color:var(--text);font-size:16px;padding:10px 16px;outline:none;min-width:0;min-height:44px;-webkit-appearance:none;appearance:none;-webkit-user-select:text;user-select:text;display:block;box-sizing:border-box;transition:border-color .15s;}
 .chat-in::placeholder{color:var(--muted);-webkit-text-fill-color:var(--muted);opacity:1;}
 .chat-in:focus{border-color:var(--accent);}
@@ -1413,8 +1420,21 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
   const [editingText,setEditingText]=useState("");
   const [pastInput,setPastInput]=useState("");
   const [copiedIdx,setCopiedIdx]=useState(null);
+  const [attachedImage,setAttachedImage]=useState(null);
   const bottomRef=useRef(null);
   const inputRef=useRef(null);
+  const fileInputRef=useRef(null);
+  const resizeImage=(file)=>new Promise(resolve=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const MAX=1024;let{width,height}=img;
+      if(width>MAX||height>MAX){if(width>height){height=Math.round(height*MAX/width);width=MAX;}else{width=Math.round(width*MAX/height);height=MAX;}}
+      const c=document.createElement("canvas");c.width=width;c.height=height;
+      c.getContext("2d").drawImage(img,0,0,width,height);
+      URL.revokeObjectURL(url);
+      resolve({dataUrl:c.toDataURL("image/jpeg",0.85),mimeType:"image/jpeg"});
+    };img.src=url;
+  });
 
   const newChat=()=>{sessionId.current=Date.now().toString();setMsgs([makeGreeting()]);setInput("");setEditingIdx(null);};
 
@@ -1473,9 +1493,10 @@ function TrainerChat({history,program,user,chatSessions,onSessionsChange,onProgr
 
   const send=async(textOverride,msgHistoryOverride)=>{
     const text=(textOverride??input).trim();
-    if(!text||loading)return;
-    if(!textOverride)setInput("");
-    if(!msgHistoryOverride)setMsgs(m=>[...m,{role:"user",text,time:nowT()}]);
+    const img=textOverride?null:attachedImage;
+    if((!text&&!img)||loading)return;
+    if(!textOverride){setInput("");setAttachedImage(null);}
+    if(!msgHistoryOverride)setMsgs(m=>[...m,{role:"user",text,time:nowT(),...(img?{image:img.dataUrl}:{})}]);
     setLoading(true);
     const firstName=user?.name?.split(" ")[0]??"there";
     const apiBase=import.meta.env.VITE_API_URL??"";
@@ -1539,7 +1560,7 @@ IMPORTANT: This is a program modification request. You MUST respond in exactly t
 ${ctx}`;
 
       const contextMsgs=msgHistoryOverride??msgs;
-      const ad=await callAPI(answerPrompt,[...contextMsgs.slice(1),{role:"user",text}],1200);
+      const ad=await callAPI(answerPrompt,[...contextMsgs.slice(1),{role:"user",text,...(img?{image:img.dataUrl}:{})}],1200);
       let reply=ad.reply??(ad.error?`Error: ${ad.error}`:"Connection error.");
       let proposalData=null;
       const match=reply.match(/<PROGRAM_UPDATE>([\s\S]*?)<\/PROGRAM_UPDATE>/);
@@ -1737,7 +1758,7 @@ ${ctx}`;
                     </div>
                   ):(
                     <>
-                      <div className="bubble">{m.text}{m.branched&&<span className="branch-badge">edited</span>}</div>
+                      <div className="bubble">{m.image&&<img className="msg-img" src={m.image} alt=""/>}{m.text}{m.branched&&<span className="branch-badge">edited</span>}</div>
                       <div className="msg-actions">
                         <button className={`msg-action-btn${copiedIdx===i?" copied":""}`} onClick={e=>{e.stopPropagation();copyMsg(i,m.text);}}><Ic.Copy/></button>
                         {!loading&&<button className="msg-action-btn" onClick={e=>{e.stopPropagation();setEditingIdx(i);setEditingText(m.text);}}><Ic.Edit/></button>}
@@ -1791,7 +1812,10 @@ ${ctx}`;
         </div>
       )}
 
+      {attachedImage&&<div className="img-preview-wrap"><div className="img-preview-thumb"><img src={attachedImage.dataUrl} alt=""/><button className="img-preview-rm" onClick={()=>setAttachedImage(null)}>×</button></div></div>}
       <div className="chat-bar">
+        <input type="file" ref={fileInputRef} accept="image/*" style={{display:"none"}} onChange={async e=>{const f=e.target.files?.[0];if(!f)return;const r=await resizeImage(f);setAttachedImage(r);e.target.value="";}}/>
+        <button className="attach-btn" onClick={()=>fileInputRef.current?.click()}>+</button>
         <input
           ref={inputRef}
           className="chat-in"
