@@ -9,7 +9,7 @@ class ErrorBoundary extends Component {
   render(){
     if(this.state.err) return(
       <div style={{padding:16,color:"var(--muted2)",fontSize:12,background:"var(--s2)",borderRadius:"var(--r)",margin:12,border:"1px solid var(--border)"}}>
-        ⚠️ Section failed to load. <button style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:12,padding:0}} onClick={()=>this.setState({err:null})}>Retry</button>
+        ⚠️ Goals failed to load. <button style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:12,padding:0}} onClick={()=>this.setState({err:null})}>Retry</button>
       </div>
     );
     return this.props.children;
@@ -813,13 +813,13 @@ function playRestEndSound(){
   }catch{}
 }
 function sendRestNotification(){
-  if(Notification?.permission==="granted"){
-    new Notification("Rest done! 💪",{body:"Time to get back to work.",silent:true});
+  if(window.Notification?.permission==="granted"){
+    new window.Notification("Rest done! 💪",{body:"Time to get back to work.",silent:true});
   }
 }
 function requestNotificationPermission(){
-  if(typeof Notification!=="undefined"&&Notification.permission==="default"){
-    Notification.requestPermission().catch(()=>{});
+  if(window.Notification?.permission==="default"){
+    window.Notification.requestPermission().catch(()=>{});
   }
 }
 
@@ -1849,7 +1849,7 @@ ${ctx}`;
           autoCorrect="off"
           spellCheck="false"
         />
-        <button className="send-btn" onClick={send}><Ic.Send/></button>
+        <button className="send-btn" onClick={()=>send()}><Ic.Send/></button>
       </div>
     </div>
   );
@@ -2479,16 +2479,16 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
     const todayStr = new Date().toISOString().slice(0,10);
     if (hr >= 6 && hr < 10) {
       const k = `gr_mnotif_${todayStr}`;
-      if (!ls.get(k,false) && Notification?.permission==="granted") {
-        new Notification("GymCoach 💪",{body:"Check your goals for today!"});
+      if (!ls.get(k,false) && window.Notification?.permission==="granted") {
+        new window.Notification("GymCoach 💪",{body:"Check your goals for today!"});
         ls.set(k, true);
       }
     }
     if (hr >= 21) {
       const k = `gr_enotif_${todayStr}`;
       const inc = goalDefs.filter(g=>isGoalActiveOn(g)&&!completions[g.id]).length + todayExercises.filter(ex=>!isExDoneToday(ex.id)).length;
-      if (!ls.get(k,false) && inc > 0 && Notification?.permission==="granted") {
-        new Notification("GymCoach 🎯",{body:`${inc} goal${inc>1?"s":""} left today — finish strong!`});
+      if (!ls.get(k,false) && inc > 0 && window.Notification?.permission==="granted") {
+        new window.Notification("GymCoach 🎯",{body:`${inc} goal${inc>1?"s":""} left today — finish strong!`});
         ls.set(k, true);
       }
     }
@@ -2518,7 +2518,7 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
           {weekPts>0&&<div style={{fontSize:11,color:"var(--accent2)",marginTop:5,fontWeight:600}}>+{weekPts} pts this week</div>}
         </div>
         <div>
-          {Notification?.permission!=="granted"&&(
+          {window.Notification?.permission!=="granted"&&(
             <button className="btn-ghost" style={{fontSize:11,padding:"5px 10px"}} onClick={()=>requestNotificationPermission()}>🔔 Enable</button>
           )}
         </div>
@@ -2595,7 +2595,7 @@ function GoalsTab({ goalDefs, setGoalDefs, goalLogs, setGoalLogs, history, progr
       )}
 
       {/* Notification help */}
-      {Notification?.permission==="denied"&&(
+      {window.Notification?.permission==="denied"&&(
         <div style={{background:"var(--s2)",borderRadius:"var(--r)",padding:14,marginBottom:12,border:"1px solid var(--border)",fontSize:12,color:"var(--muted2)",lineHeight:1.6}}>
           🔔 Notifications blocked. Enable them in your device settings for 6am morning reminders and 9pm goal nudges.
         </div>
